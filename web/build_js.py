@@ -1,7 +1,9 @@
 import base64
+import os
 
-with open('web/burgee_base64.txt', 'r') as f:
-    b64 = f.read().strip()
+img_path = 'ayc_burgee_small.png' if os.path.exists('ayc_burgee_small.png') else '../ayc_burgee_small.png'
+with open(img_path, 'rb') as f:
+    b64 = base64.b64encode(f.read()).decode('utf-8')
 
 template = """/**
  * Atlantis Yacht Club (AYC) - Tide Clock & Harbor Dashboard
@@ -243,41 +245,36 @@ template = """/**
     }
 
     async fetchTempestWeather() {
+      let gotTempest = false;
+
+      // 1. Primary: Better Forecast Endpoint (contains official station current_conditions + 10-day forecast)
       try {
-        const obsUrl = `https://swd.weatherflow.com/swd/rest/observations/station/${TEMPEST_STATION_ID}?token=${TEMPEST_TOKEN}`;
-        const res = await fetch(obsUrl);
-        const data = await res.json();
-        if (data && data.obs && data.obs.length > 0) {
-          const o = data.obs[0];
-          const tempF = (o.air_temperature * 9 / 5 + 32);
-          const feelsF = o.feels_like ? (o.feels_like * 9 / 5 + 32) : tempF;
-          const windKts = (o.wind_avg * 1.94384);
-          const gustKts = (o.wind_gust * 1.94384);
-          const pInhg = o.sea_level_pressure ? (o.sea_level_pressure * 0.02953) : (o.barometric_pressure * 0.02953);
-
-          this.weather.temp_f = tempF.toFixed(1);
-          this.weather.feels_f = feelsF.toFixed(1);
-          this.weather.wind_kts = windKts.toFixed(1);
-          this.weather.wind_gust = gustKts.toFixed(1);
-          this.weather.wind_deg = o.wind_direction;
-          this.weather.wind_card = this.degToCard(o.wind_direction);
-          this.weather.press_inhg = pInhg.toFixed(2);
-          this.weather.press_mb = o.sea_level_pressure || o.barometric_pressure;
-          this.weather.humidity = o.relative_humidity;
-          this.weather.dew_f = (o.dew_point * 9 / 5 + 32).toFixed(1);
-          this.weather.rain_rate = (o.precip * 0.03937).toFixed(2);
-          this.weather.rain_today = (o.precip_accum_local_day * 0.03937).toFixed(2);
-          this.weather.uv = o.uv;
-          this.weather.solar = o.solar_radiation;
-          this.weather.is_live = true;
-        }
-
-        const fcUrl = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${TEMPEST_STATION_ID}&token=${TEMPEST_TOKEN}&units_temp=f`;
+        const fcUrl = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${TEMPEST_STATION_ID}&token=${TEMPEST_TOKEN}&units_temp=f&units_wind=kts&units_pressure=inhg`;
         const fcRes = await fetch(fcUrl);
         const fcData = await fcRes.json();
+        if (fcData && fcData.current_conditions) {
+          const cc = fcData.current_conditions;
+          this.weather.temp_f = (cc.air_temperature !== undefined && cc.air_temperature !== null) ? Number(cc.air_temperature).toFixed(1) : null;
+          this.weather.feels_f = (cc.feels_like !== undefined && cc.feels_like !== null) ? Number(cc.feels_like).toFixed(1) : this.weather.temp_f;
+          this.weather.cond = cc.conditions || 'Clear';
+          this.weather.icon = this.getWeatherIcon(cc.icon || cc.conditions);
+          this.weather.wind_kts = (cc.wind_avg !== undefined && cc.wind_avg !== null) ? Number(cc.wind_avg).toFixed(1) : '0.0';
+          this.weather.wind_gust = (cc.wind_gust !== undefined && cc.wind_gust !== null) ? Number(cc.wind_gust).toFixed(1) : '0.0';
+          this.weather.wind_deg = cc.wind_direction;
+          this.weather.wind_card = cc.wind_direction_cardinal || this.degToCard(cc.wind_direction);
+          this.weather.press_inhg = (cc.sea_level_pressure !== undefined && cc.sea_level_pressure !== null) ? Number(cc.sea_level_pressure).toFixed(2) : (cc.station_pressure ? Number(cc.station_pressure).toFixed(2) : null);
+          this.weather.press_mb = this.weather.press_inhg ? Math.round(Number(this.weather.press_inhg) * 33.8639) : 1016;
+          this.weather.press_trend = cc.pressure_trend || 'steady';
+          this.weather.humidity = cc.relative_humidity;
+          this.weather.dew_f = (cc.dew_point !== undefined && cc.dew_point !== null) ? Number(cc.dew_point).toFixed(1) : '--';
+          this.weather.uv = cc.uv !== undefined ? cc.uv : 0;
+          this.weather.solar = cc.solar_radiation !== undefined ? cc.solar_radiation : 0;
+          this.weather.is_live = true;
+          this.weather.source = 'Tempest #141221 (Live)';
+          gotTempest = true;
+        }
+
         if (fcData && fcData.forecast && fcData.forecast.daily) {
-          this.weather.cond = fcData.current_conditions ? fcData.current_conditions.conditions : 'Clear';
-          this.weather.icon = this.getWeatherIcon(this.weather.cond);
           this.weather.forecast_3day = fcData.forecast.daily.slice(0, 3).map(d => {
             const dt = new Date(d.day_start_local * 1000);
             return {
@@ -293,8 +290,77 @@ template = """/**
           this.renderForecast();
         }
       } catch (err) {
-        console.warn('Tempest fetch notice:', err);
+        console.warn('Tempest forecast notice:', err);
       }
+
+      // 2. Direct device telemetry for live precipitation (Device 344469 / ST-00144769)
+      try {
+        const devUrl = `https://swd.weatherflow.com/swd/rest/observations/device/344469?token=${TEMPEST_TOKEN}`;
+        const dRes = await fetch(devUrl);
+        const dData = await dRes.json();
+        if (dData && dData.obs && dData.obs.length > 0) {
+          const o = dData.obs[0];
+          if (Array.isArray(o) && o.length >= 19) {
+            const pMm = o[12] || 0.0;
+            const pTodayMm = o[18] || 0.0;
+            this.weather.rain_rate = (pMm * 0.03937).toFixed(2);
+            this.weather.rain_today = (pTodayMm * 0.03937).toFixed(2);
+            if (o[10] !== undefined) this.weather.uv = o[10];
+            if (o[11] !== undefined) this.weather.solar = o[11];
+          }
+        }
+      } catch (err) {}
+
+      // 3. Fallback: NOAA NWS Monmouth County Station (KBLM) if Tempest returned no data
+      if (!gotTempest) {
+        try {
+          const nwsUrl = 'https://api.weather.gov/stations/KBLM/observations/latest';
+          const nwsRes = await fetch(nwsUrl);
+          const nwsData = await nwsRes.json();
+          if (nwsData && nwsData.properties) {
+            const p = nwsData.properties;
+            const cTemp = p.temperature && p.temperature.value;
+            if (cTemp !== null && cTemp !== undefined) {
+              const tempF = (cTemp * 9 / 5 + 32);
+              this.weather.temp_f = tempF.toFixed(1);
+              this.weather.feels_f = (p.windChill && p.windChill.value !== null) 
+                ? (p.windChill.value * 9 / 5 + 32).toFixed(1) 
+                : (p.heatIndex && p.heatIndex.value !== null ? (p.heatIndex.value * 9 / 5 + 32).toFixed(1) : this.weather.temp_f);
+            }
+            if (p.windSpeed && p.windSpeed.value !== null) {
+              this.weather.wind_kts = (p.windSpeed.value * 0.539957).toFixed(1);
+            }
+            if (p.windGust && p.windGust.value !== null) {
+              this.weather.wind_gust = (p.windGust.value * 0.539957).toFixed(1);
+            }
+            if (p.windDirection && p.windDirection.value !== null) {
+              this.weather.wind_deg = Math.round(p.windDirection.value);
+              this.weather.wind_card = this.degToCard(this.weather.wind_deg);
+            }
+            if (p.barometricPressure && p.barometricPressure.value !== null) {
+              const pIn = p.barometricPressure.value * 0.0002953;
+              this.weather.press_inhg = pIn.toFixed(2);
+              this.weather.press_mb = Math.round(p.barometricPressure.value / 100);
+            }
+            if (p.relativeHumidity && p.relativeHumidity.value !== null) {
+              this.weather.humidity = Math.round(p.relativeHumidity.value);
+            }
+            if (p.dewpoint && p.dewpoint.value !== null) {
+              this.weather.dew_f = (p.dewpoint.value * 9 / 5 + 32).toFixed(1);
+            }
+            if (p.textDescription) {
+              this.weather.cond = p.textDescription;
+              this.weather.icon = this.getWeatherIcon(p.textDescription);
+            }
+            this.weather.is_live = true;
+            this.weather.source = 'NOAA NWS KBLM (Monmouth Co)';
+          }
+        } catch (nwsErr) {
+          console.warn('NWS fallback notice:', nwsErr);
+        }
+      }
+
+      this.updateDOMText(new Date());
     }
 
     degToCard(deg) {

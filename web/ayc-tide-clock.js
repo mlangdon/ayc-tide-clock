@@ -11,7 +11,7 @@
   const TEMPEST_TOKEN = atob(_K);
   const TEMPEST_STATION_ID = 141221;
   const TEMPEST_URL = 'https://tempestwx.com/station/141221/';
-  const BURGEE_B64 = 'data:image/png;base64,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';
+  const BURGEE_B64 = 'data:image/png;base64,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';
 
   // Physical Marine Constants
   const TIDE_PERIOD_HOURS = 12.42066667; // 12h 25m 14.4s
@@ -238,41 +238,36 @@
     }
 
     async fetchTempestWeather() {
+      let gotTempest = false;
+
+      // 1. Primary: Better Forecast Endpoint (contains official station current_conditions + 10-day forecast)
       try {
-        const obsUrl = `https://swd.weatherflow.com/swd/rest/observations/station/${TEMPEST_STATION_ID}?token=${TEMPEST_TOKEN}`;
-        const res = await fetch(obsUrl);
-        const data = await res.json();
-        if (data && data.obs && data.obs.length > 0) {
-          const o = data.obs[0];
-          const tempF = (o.air_temperature * 9 / 5 + 32);
-          const feelsF = o.feels_like ? (o.feels_like * 9 / 5 + 32) : tempF;
-          const windKts = (o.wind_avg * 1.94384);
-          const gustKts = (o.wind_gust * 1.94384);
-          const pInhg = o.sea_level_pressure ? (o.sea_level_pressure * 0.02953) : (o.barometric_pressure * 0.02953);
-
-          this.weather.temp_f = tempF.toFixed(1);
-          this.weather.feels_f = feelsF.toFixed(1);
-          this.weather.wind_kts = windKts.toFixed(1);
-          this.weather.wind_gust = gustKts.toFixed(1);
-          this.weather.wind_deg = o.wind_direction;
-          this.weather.wind_card = this.degToCard(o.wind_direction);
-          this.weather.press_inhg = pInhg.toFixed(2);
-          this.weather.press_mb = o.sea_level_pressure || o.barometric_pressure;
-          this.weather.humidity = o.relative_humidity;
-          this.weather.dew_f = (o.dew_point * 9 / 5 + 32).toFixed(1);
-          this.weather.rain_rate = (o.precip * 0.03937).toFixed(2);
-          this.weather.rain_today = (o.precip_accum_local_day * 0.03937).toFixed(2);
-          this.weather.uv = o.uv;
-          this.weather.solar = o.solar_radiation;
-          this.weather.is_live = true;
-        }
-
-        const fcUrl = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${TEMPEST_STATION_ID}&token=${TEMPEST_TOKEN}&units_temp=f`;
+        const fcUrl = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${TEMPEST_STATION_ID}&token=${TEMPEST_TOKEN}&units_temp=f&units_wind=kts&units_pressure=inhg`;
         const fcRes = await fetch(fcUrl);
         const fcData = await fcRes.json();
+        if (fcData && fcData.current_conditions) {
+          const cc = fcData.current_conditions;
+          this.weather.temp_f = (cc.air_temperature !== undefined && cc.air_temperature !== null) ? Number(cc.air_temperature).toFixed(1) : null;
+          this.weather.feels_f = (cc.feels_like !== undefined && cc.feels_like !== null) ? Number(cc.feels_like).toFixed(1) : this.weather.temp_f;
+          this.weather.cond = cc.conditions || 'Clear';
+          this.weather.icon = this.getWeatherIcon(cc.icon || cc.conditions);
+          this.weather.wind_kts = (cc.wind_avg !== undefined && cc.wind_avg !== null) ? Number(cc.wind_avg).toFixed(1) : '0.0';
+          this.weather.wind_gust = (cc.wind_gust !== undefined && cc.wind_gust !== null) ? Number(cc.wind_gust).toFixed(1) : '0.0';
+          this.weather.wind_deg = cc.wind_direction;
+          this.weather.wind_card = cc.wind_direction_cardinal || this.degToCard(cc.wind_direction);
+          this.weather.press_inhg = (cc.sea_level_pressure !== undefined && cc.sea_level_pressure !== null) ? Number(cc.sea_level_pressure).toFixed(2) : (cc.station_pressure ? Number(cc.station_pressure).toFixed(2) : null);
+          this.weather.press_mb = this.weather.press_inhg ? Math.round(Number(this.weather.press_inhg) * 33.8639) : 1016;
+          this.weather.press_trend = cc.pressure_trend || 'steady';
+          this.weather.humidity = cc.relative_humidity;
+          this.weather.dew_f = (cc.dew_point !== undefined && cc.dew_point !== null) ? Number(cc.dew_point).toFixed(1) : '--';
+          this.weather.uv = cc.uv !== undefined ? cc.uv : 0;
+          this.weather.solar = cc.solar_radiation !== undefined ? cc.solar_radiation : 0;
+          this.weather.is_live = true;
+          this.weather.source = 'Tempest #141221 (Live)';
+          gotTempest = true;
+        }
+
         if (fcData && fcData.forecast && fcData.forecast.daily) {
-          this.weather.cond = fcData.current_conditions ? fcData.current_conditions.conditions : 'Clear';
-          this.weather.icon = this.getWeatherIcon(this.weather.cond);
           this.weather.forecast_3day = fcData.forecast.daily.slice(0, 3).map(d => {
             const dt = new Date(d.day_start_local * 1000);
             return {
@@ -288,8 +283,77 @@
           this.renderForecast();
         }
       } catch (err) {
-        console.warn('Tempest fetch notice:', err);
+        console.warn('Tempest forecast notice:', err);
       }
+
+      // 2. Direct device telemetry for live precipitation (Device 344469 / ST-00144769)
+      try {
+        const devUrl = `https://swd.weatherflow.com/swd/rest/observations/device/344469?token=${TEMPEST_TOKEN}`;
+        const dRes = await fetch(devUrl);
+        const dData = await dRes.json();
+        if (dData && dData.obs && dData.obs.length > 0) {
+          const o = dData.obs[0];
+          if (Array.isArray(o) && o.length >= 19) {
+            const pMm = o[12] || 0.0;
+            const pTodayMm = o[18] || 0.0;
+            this.weather.rain_rate = (pMm * 0.03937).toFixed(2);
+            this.weather.rain_today = (pTodayMm * 0.03937).toFixed(2);
+            if (o[10] !== undefined) this.weather.uv = o[10];
+            if (o[11] !== undefined) this.weather.solar = o[11];
+          }
+        }
+      } catch (err) {}
+
+      // 3. Fallback: NOAA NWS Monmouth County Station (KBLM) if Tempest returned no data
+      if (!gotTempest) {
+        try {
+          const nwsUrl = 'https://api.weather.gov/stations/KBLM/observations/latest';
+          const nwsRes = await fetch(nwsUrl);
+          const nwsData = await nwsRes.json();
+          if (nwsData && nwsData.properties) {
+            const p = nwsData.properties;
+            const cTemp = p.temperature && p.temperature.value;
+            if (cTemp !== null && cTemp !== undefined) {
+              const tempF = (cTemp * 9 / 5 + 32);
+              this.weather.temp_f = tempF.toFixed(1);
+              this.weather.feels_f = (p.windChill && p.windChill.value !== null) 
+                ? (p.windChill.value * 9 / 5 + 32).toFixed(1) 
+                : (p.heatIndex && p.heatIndex.value !== null ? (p.heatIndex.value * 9 / 5 + 32).toFixed(1) : this.weather.temp_f);
+            }
+            if (p.windSpeed && p.windSpeed.value !== null) {
+              this.weather.wind_kts = (p.windSpeed.value * 0.539957).toFixed(1);
+            }
+            if (p.windGust && p.windGust.value !== null) {
+              this.weather.wind_gust = (p.windGust.value * 0.539957).toFixed(1);
+            }
+            if (p.windDirection && p.windDirection.value !== null) {
+              this.weather.wind_deg = Math.round(p.windDirection.value);
+              this.weather.wind_card = this.degToCard(this.weather.wind_deg);
+            }
+            if (p.barometricPressure && p.barometricPressure.value !== null) {
+              const pIn = p.barometricPressure.value * 0.0002953;
+              this.weather.press_inhg = pIn.toFixed(2);
+              this.weather.press_mb = Math.round(p.barometricPressure.value / 100);
+            }
+            if (p.relativeHumidity && p.relativeHumidity.value !== null) {
+              this.weather.humidity = Math.round(p.relativeHumidity.value);
+            }
+            if (p.dewpoint && p.dewpoint.value !== null) {
+              this.weather.dew_f = (p.dewpoint.value * 9 / 5 + 32).toFixed(1);
+            }
+            if (p.textDescription) {
+              this.weather.cond = p.textDescription;
+              this.weather.icon = this.getWeatherIcon(p.textDescription);
+            }
+            this.weather.is_live = true;
+            this.weather.source = 'NOAA NWS KBLM (Monmouth Co)';
+          }
+        } catch (nwsErr) {
+          console.warn('NWS fallback notice:', nwsErr);
+        }
+      }
+
+      this.updateDOMText(new Date());
     }
 
     degToCard(deg) {

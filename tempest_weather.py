@@ -91,105 +91,107 @@ class TempestWeatherService:
 
     def _fetch_tempest_api(self) -> bool:
         """Fetch live observations and 3-day forecast from WeatherFlow / Tempest REST API."""
+        got_data = False
+        now = datetime.datetime.now()
+
+        # 1. Primary: Better Forecast Endpoint (contains official station current_conditions + daily forecast)
         try:
-            url = f"https://swd.weatherflow.com/swd/rest/observations/station/{self.station_id}?token={self.token}"
-            req = urllib.request.Request(url, headers={"User-Agent": "AYCTideClock/1.0"})
-            with urllib.request.urlopen(req, timeout=6) as response:
-                data = json.loads(response.read().decode("utf-8"))
+            f_url = f"https://swd.weatherflow.com/swd/rest/better_forecast?station_id={self.station_id}&token={self.token}&units_temp=f&units_wind=kts&units_pressure=inhg"
+            f_req = urllib.request.Request(f_url, headers={"User-Agent": "AYCTideClock/1.0"})
+            with urllib.request.urlopen(f_req, timeout=6) as f_resp:
+                f_data = json.loads(f_resp.read().decode("utf-8"))
 
-            if "obs" in data and len(data["obs"]) > 0:
-                obs = data["obs"][0]
-                now = datetime.datetime.now()
-
-                # Conversion helpers
-                c_temp = obs.get("air_temperature")
-                temp_f = (c_temp * 9.0 / 5.0 + 32.0) if c_temp is not None else None
-
-                c_feels = obs.get("feels_like")
-                feels_f = (c_feels * 9.0 / 5.0 + 32.0) if c_feels is not None else temp_f
-
-                wind_ms = obs.get("wind_avg")
-                wind_kts = (wind_ms * 1.94384) if wind_ms is not None else None
-                wind_mph = (wind_ms * 2.23694) if wind_ms is not None else None
-
-                gust_ms = obs.get("wind_gust")
-                gust_kts = (gust_ms * 1.94384) if gust_ms is not None else None
-
-                wind_dir = obs.get("wind_direction")
-
-                p_mb = obs.get("sea_level_pressure") or obs.get("barometric_pressure")
-                p_inhg = (p_mb * 0.029529983) if p_mb is not None else None
-
-                p_rate_mm = obs.get("precip") or 0.0
-                p_today_mm = obs.get("precip_accum_local_day") or 0.0
-
-                c_dew = obs.get("dew_point")
-                dew_f = (c_dew * 9.0 / 5.0 + 32.0) if c_dew is not None else None
-
-                # Fetch Better Forecast from Tempest REST API
-                cond_text = "Partly Cloudy"
-                try:
-                    f_url = f"https://swd.weatherflow.com/swd/rest/better_forecast?station_id={self.station_id}&token={self.token}&units_temp=f"
-                    f_req = urllib.request.Request(f_url, headers={"User-Agent": "AYCTideClock/1.0"})
-                    with urllib.request.urlopen(f_req, timeout=5) as f_resp:
-                        f_data = json.loads(f_resp.read().decode("utf-8"))
-                        cc = f_data.get("current_conditions", {})
-                        if "conditions" in cc:
-                            cond_text = cc["conditions"]
-
-                        daily = f_data.get("forecast", {}).get("daily", [])
-                        new_3day = []
-                        # Take upcoming 3 days (skip or include today based on hour)
-                        for d in daily[:3]:
-                            epoch = d.get("day_start_local", 0)
-                            dt = datetime.datetime.fromtimestamp(epoch) if epoch else now
-                            high = d.get("air_temp_high")
-                            low = d.get("air_temp_low")
-                            c_desc = d.get("conditions", "Partly Cloudy")
-                            precip_prob = d.get("precip_probability", 0)
-                            new_3day.append({
-                                "day_name": dt.strftime("%a"),
-                                "date_str": dt.strftime("%b %d"),
-                                "high_f": round(high) if high is not None else "--",
-                                "low_f": round(low) if low is not None else "--",
-                                "conditions": c_desc,
-                                "icon": self._get_weather_icon(c_desc),
-                                "precip_pct": precip_prob
-                            })
-                        if new_3day:
-                            self.forecast_3day = new_3day
-                except Exception:
-                    pass
+            cc = f_data.get("current_conditions", {})
+            if cc and "air_temperature" in cc:
+                c_temp = cc.get("air_temperature")
+                c_feels = cc.get("feels_like", c_temp)
+                cond_text = cc.get("conditions", "Partly Cloudy")
+                wind_kts = cc.get("wind_avg", 0.0)
+                gust_kts = cc.get("wind_gust", 0.0)
+                wind_dir = cc.get("wind_direction")
+                wind_card = cc.get("wind_direction_cardinal") or degrees_to_cardinal(wind_dir)
+                p_inhg = cc.get("sea_level_pressure") or cc.get("station_pressure")
+                p_mb = round(p_inhg * 33.8639) if p_inhg else 1016
+                rel_hum = cc.get("relative_humidity")
+                dew_f = cc.get("dew_point")
+                uv_idx = cc.get("uv", 0)
+                solar_rad = cc.get("solar_radiation", 0)
+                p_trend = cc.get("pressure_trend", "steady")
 
                 self.metrics = {
-                    "temp_f": round(temp_f, 1) if temp_f is not None else None,
-                    "feels_like_f": round(feels_f, 1) if feels_f is not None else None,
+                    "temp_f": round(c_temp, 1) if c_temp is not None else None,
+                    "feels_like_f": round(c_feels, 1) if c_feels is not None else None,
                     "conditions": cond_text,
                     "icon": self._get_weather_icon(cond_text),
-                    "wind_spd_kts": round(wind_kts, 1) if wind_kts is not None else None,
-                    "wind_spd_mph": round(wind_mph, 1) if wind_mph is not None else None,
-                    "wind_gust_kts": round(gust_kts, 1) if gust_kts is not None else None,
-                    "wind_dir_deg": int(wind_dir) if wind_dir is not None else None,
-                    "wind_cardinal": degrees_to_cardinal(wind_dir),
+                    "wind_spd_kts": round(wind_kts, 1) if wind_kts is not None else 0.0,
+                    "wind_spd_mph": round(wind_kts * 1.15078, 1) if wind_kts is not None else 0.0,
+                    "wind_gust_kts": round(gust_kts, 1) if gust_kts is not None else 0.0,
+                    "wind_dir_deg": wind_dir,
+                    "wind_cardinal": wind_card,
                     "pressure_inhg": round(p_inhg, 2) if p_inhg is not None else None,
-                    "pressure_mb": round(p_mb, 1) if p_mb is not None else None,
-                    "pressure_trend": obs.get("pressure_trend", "steady"),
-                    "humidity_pct": int(obs.get("relative_humidity", 0)),
+                    "pressure_mb": p_mb,
+                    "pressure_trend": p_trend,
+                    "humidity_pct": rel_hum,
                     "dew_point_f": round(dew_f, 1) if dew_f is not None else None,
-                    "uv_index": obs.get("uv", 0),
-                    "solar_radiation": int(obs.get("solar_radiation", 0)),
-                    "precip_rate_in": round(p_rate_mm * 0.0393701, 2),
-                    "precip_today_in": round(p_today_mm * 0.0393701, 2),
-                    "lightning_count": obs.get("lightning_strike_count", 0),
-                    "source": f"Tempestwx #{self.station_id}",
+                    "uv_index": uv_idx,
+                    "solar_radiation": solar_rad,
+                    "precip_rate_in": 0.0,
+                    "precip_today_in": 0.0,
+                    "lightning_count": 0,
+                    "source": "Tempest #141221 (Live)",
                     "is_tempest": True,
                     "is_live": True,
-                    "last_updated": now
+                    "last_updated": now.strftime("%I:%M %p")
                 }
-                return True
+                got_data = True
+
+            # Extract 3-Day Forecast
+            daily = f_data.get("forecast", {}).get("daily", [])
+            new_3day = []
+            for d in daily[:3]:
+                epoch = d.get("day_start_local", 0)
+                dt = datetime.datetime.fromtimestamp(epoch) if epoch else now
+                high = d.get("air_temp_high")
+                low = d.get("air_temp_low")
+                c_desc = d.get("conditions", "Partly Cloudy")
+                precip_prob = d.get("precip_probability", 0)
+                new_3day.append({
+                    "day_name": dt.strftime("%a"),
+                    "date_str": dt.strftime("%b %d"),
+                    "high_f": round(high) if high is not None else "--",
+                    "low_f": round(low) if low is not None else "--",
+                    "conditions": c_desc,
+                    "icon": self._get_weather_icon(c_desc),
+                    "precip_pct": precip_prob
+                })
+            if new_3day:
+                self.forecast_3day = new_3day
+
+        except Exception as e:
+            pass
+
+        # 2. Check Device Telemetry for live rain accumulation (Device 344469)
+        try:
+            d_url = f"https://swd.weatherflow.com/swd/rest/observations/device/344469?token={self.token}"
+            d_req = urllib.request.Request(d_url, headers={"User-Agent": "AYCTideClock/1.0"})
+            with urllib.request.urlopen(d_req, timeout=5) as d_resp:
+                d_data = json.loads(d_resp.read().decode("utf-8"))
+            obs_list = d_data.get("obs", [])
+            if obs_list and len(obs_list) > 0:
+                o = obs_list[0]
+                if isinstance(o, list) and len(o) >= 19:
+                    p_mm = o[12] or 0.0
+                    p_day_mm = o[18] or 0.0
+                    self.metrics["precip_rate_in"] = round(p_mm * 0.03937, 2)
+                    self.metrics["precip_today_in"] = round(p_day_mm * 0.03937, 2)
+                    if len(o) > 10 and o[10] is not None:
+                        self.metrics["uv_index"] = o[10]
+                    if len(o) > 11 and o[11] is not None:
+                        self.metrics["solar_radiation"] = o[11]
         except Exception:
-            return False
-        return False
+            pass
+
+        return got_data
 
     def _fetch_nws_fallback(self):
         """Fetch live coastal observations from National Weather Service (KBLM/Monmouth)."""
