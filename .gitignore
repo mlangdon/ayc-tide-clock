@@ -1,0 +1,18 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller / Build Artifacts
+build/
+dist/
+*.spec
+
+# Local settings / cache
+.vscode/
+.idea/
+*.tmp
+*.log
+
+# Optional: Large Windows Executables (can be uploaded to GitHub Releases)
+*.exe

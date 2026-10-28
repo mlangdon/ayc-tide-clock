@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atlantis Yacht Club - Tide Clock & Harbor Weather Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background-color: #080E17;
+      color: #E0E8F0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .demo-wrapper {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    .header-panel {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header-panel h1 {
+      margin: 0 0 6px 0;
+      font-size: 26px;
+      color: #E6A13B;
+      letter-spacing: 0.5px;
+    }
+    .header-panel p {
+      margin: 0;
+      color: #9BB0C8;
+      font-size: 14px;
+    }
+    .doc-section {
+      background: #152234;
+      border: 1px solid #24364E;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-top: 32px;
+    }
+    .doc-section h2 {
+      margin-top: 0;
+      color: #E6A13B;
+      font-size: 18px;
+      border-bottom: 1px solid #24364E;
+      padding-bottom: 8px;
+    }
+    .code-block {
+      background: #0E1724;
+      border: 1px solid #24364E;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: Consolas, Monaco, "Courier New", monospace;
+      font-size: 13px;
+      color: #76B8FF;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .badge-tag {
+      background: rgba(230, 161, 59, 0.15);
+      color: #E6A13B;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="demo-wrapper">
+    <div class="header-panel">
+      <h1>ATLANTIS YACHT CLUB</h1>
+      <p>Live Marine Tide Chronometer & Tempestwx Weather Station 141221</p>
+    </div>
+
+    <!-- Live Embedded Component -->
+    <ayc-tide-clock></ayc-tide-clock>
+
+    <!-- Embedding Documentation -->
+    <div class="doc-section">
+      <h2>Web Embedding Instructions</h2>
+      <p style="font-size: 14px; line-height: 1.6; color: #CCD6E0;">
+        You can embed this interactive widget into any standard website (WordPress, Squarespace, Wix, custom HTML, Club portal) using standard HTML tag embedding.
+      </p>
+
+      <h3 style="font-size: 14px; color: #3E95FF; margin-top: 20px;">Method 1: Custom Web Component (Recommended)</h3>
+      <p style="font-size: 13px; color: #9BB0C8;">
+        Include the script from your hosted repository or CDN and drop the custom tag wherever you want the widget to appear:
+      </p>
+      <div class="code-block">&lt;!-- 1. Include the AYC Tide Clock Script --&gt;
+&lt;script src="https://&lt;your-github-username&gt;.github.io/&lt;repo-name&gt;/web/ayc-tide-clock.js" defer&gt;&lt;/script&gt;
+
+&lt;!-- 2. Insert the widget tag anywhere on your webpage --&gt;
+&lt;ayc-tide-clock&gt;&lt;/ayc-tide-clock&gt;</div>
+
+      <h3 style="font-size: 14px; color: #3E95FF; margin-top: 20px;">Method 2: Standard Iframe Embedding</h3>
+      <p style="font-size: 13px; color: #9BB0C8;">
+        If your CMS or website host restricts external custom scripts, you can embed the widget inside an iframe:
+      </p>
+      <div class="code-block">&lt;iframe
+  src="https://&lt;your-github-username&gt;.github.io/&lt;repo-name&gt;/web/index.html"
+  width="100%"
+  height="720"
+  frameborder="0"
+  style="border: none; border-radius: 8px; max-width: 980px; display: block; margin: 0 auto;"
+  scrolling="no"&gt;
+&lt;/iframe&gt;</div>
+
+      <h3 style="font-size: 14px; color: #3E95FF; margin-top: 20px;">Hosting on a Private GitHub Repository</h3>
+      <ol style="font-size: 13px; line-height: 1.8; color: #CCD6E0; padding-left: 20px;">
+        <li>Push the <code style="color:#E6A13B;">web/</code> directory (<code style="color:#E6A13B;">ayc-tide-clock.js</code> and <code style="color:#E6A13B;">index.html</code>) to your GitHub repository.</li>
+        <li>Enable <strong>GitHub Pages</strong> in your repository settings (Settings &gt; Pages &gt; Build and deployment: Deploy from a branch, select <code>main</code> or <code>gh-pages</code>). Note: GitHub Pages can serve public assets even from private repos on GitHub Enterprise/Pro or public repos. Alternatively, host the single standalone <code style="color:#E6A13B;">ayc-tide-clock.js</code> file on any web host, AWS S3/CloudFront bucket, or Cloudflare Pages.</li>
+        <li>The client browser will fetch live NOAA tide data and Tempestwx station #141221 observations directly without requiring any server backend.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Include Local Script for Live Demo -->
+  <script src="ayc-tide-clock.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "station_name": "Atlantis Yacht Club (Channel Interpolated - 40\u00b020'12.7\"N)",
+  "ref_high_tide": "2026-10-28T11:27:00",
+  "theme": "ayc_navy",
+  "always_on_top": false,
+  "sound_alert": false,
+  "tempest_station_id": 141221,
+  "tempest_token": "63b1dee7-453a-49cd-be5c-9c905c20fa75",
+  "widget_x": null,
+  "widget_y": null,
+  "widget_mode": "hud",
+  "widget_alpha": 0.95,
+  "widget_topmost": true,
+  "widget_locked": false,
+  "bridge_current_mode": "math"
+}
