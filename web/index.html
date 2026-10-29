@@ -5,118 +5,243 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Atlantis Yacht Club - Tide Clock & Harbor Weather Dashboard</title>
   <style>
+    :root {
+      --ayc-navy: #0A1524;
+      --ayc-card: #162840;
+      --ayc-card-border: #274266;
+      --ayc-blue: #457B9D;
+      --ayc-honeydew: #F1FAEE;
+      --ayc-teal: #A8DADC;
+      --ayc-red: #E63946;
+      --ayc-gold: #E6A13B;
+      --ayc-link: #1E7ABE;
+    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      padding: 24px;
-      background-color: #0A1524;
-      color: #F1FAEE;
+      padding: 24px 16px;
+      background-color: var(--ayc-navy);
+      color: var(--ayc-honeydew);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
     }
-    .demo-wrapper {
-      max-width: 980px;
+    .page-wrapper {
+      max-width: 1000px;
       margin: 0 auto;
     }
-    .header-panel {
+    .header-banner {
       text-align: center;
       margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--ayc-card-border);
     }
-    .header-panel h1 {
+    .header-banner h1 {
       margin: 0 0 6px 0;
-      font-size: 26px;
-      color: #E6A13B;
-      letter-spacing: 0.5px;
+      font-size: 28px;
+      font-family: Georgia, serif;
+      letter-spacing: 0.8px;
+      color: var(--ayc-gold);
     }
-    .header-panel p {
+    .header-banner p {
       margin: 0;
-      color: #A8DADC;
+      color: var(--ayc-teal);
       font-size: 14px;
     }
+    .version-pill {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 3px 10px;
+      background: rgba(230, 161, 59, 0.15);
+      border: 1px solid var(--ayc-gold);
+      color: var(--ayc-gold);
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.4px;
+    }
+    .preview-container {
+      margin-bottom: 32px;
+    }
     .doc-section {
-      background: #162840;
-      border: 1px solid #274266;
+      background: var(--ayc-card);
+      border: 1px solid var(--ayc-card-border);
       border-radius: 8px;
-      padding: 20px 24px;
-      margin-top: 32px;
+      padding: 24px;
+      margin-top: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
     .doc-section h2 {
       margin-top: 0;
-      color: #E6A13B;
-      font-size: 18px;
-      border-bottom: 1px solid #274266;
+      color: var(--ayc-gold);
+      font-size: 20px;
+      border-bottom: 1px solid var(--ayc-card-border);
       padding-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .doc-section h3 {
+      font-size: 15px;
+      color: var(--ayc-blue);
+      margin: 20px 0 8px 0;
+    }
+    p, li {
+      color: #D3DFEE;
+      font-size: 13.5px;
     }
     .code-block {
-      background: #0F1E33;
-      border: 1px solid #274266;
+      background: #091320;
+      border: 1px solid var(--ayc-card-border);
       border-radius: 6px;
       padding: 14px;
       font-family: Consolas, Monaco, "Courier New", monospace;
       font-size: 13px;
-      color: #A8DADC;
+      color: var(--ayc-teal);
       overflow-x: auto;
       white-space: pre;
+      margin: 8px 0 16px 0;
     }
-    .badge-tag {
-      background: rgba(230, 161, 59, 0.15);
-      color: #E6A13B;
-      padding: 2px 8px;
-      border-radius: 4px;
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .feature-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+    .feature-item strong {
+      color: var(--ayc-gold);
+      display: block;
+      margin-bottom: 3px;
+      font-size: 13px;
+    }
+    .feature-item span {
       font-size: 12px;
-      font-weight: bold;
+      color: #BACBDE;
+    }
+    a.site-link {
+      color: var(--ayc-teal);
+      text-decoration: underline;
+    }
+    a.site-link:hover {
+      color: var(--ayc-honeydew);
     }
   </style>
 </head>
 <body>
 
-  <div class="demo-wrapper">
-    <div class="header-panel">
+  <div class="page-wrapper">
+    <div class="header-banner">
       <h1>ATLANTIS YACHT CLUB</h1>
-      <p>Live Marine Tide Chronometer & Tempestwx Weather Station 141221</p>
+      <p>Monmouth Beach, NJ • Shrewsbury River Marine Tide Chronometer & Weather Dashboard</p>
+      <div class="version-pill">Version 2.4 • Atlantis Yacht Club Official Palette</div>
     </div>
 
-    <!-- Live Embedded Component -->
-    <ayc-tide-clock></ayc-tide-clock>
+    <!-- Live Interactive Component Preview -->
+    <div class="preview-container">
+      <ayc-tide-clock></ayc-tide-clock>
+    </div>
 
-    <!-- Embedding Documentation -->
+    <!-- Embedding Instructions & Integration Guide -->
     <div class="doc-section">
       <h2>Web Embedding Instructions</h2>
-      <p style="font-size: 14px; line-height: 1.6; color: #CCD6E0;">
-        You can embed this interactive widget into any standard website (WordPress, Squarespace, Wix, custom HTML, Club portal) using standard HTML tag embedding.
+      <p>
+        The <strong>AYC Tide Clock & Harbor Weather</strong> widget is built as a zero-dependency, self-contained <strong>Web Component</strong> with <em>Shadow DOM</em> encapsulation. This ensures full visual consistency and prevents the host website's CSS styles (WordPress, Squarespace, Wix, ClubExpress, or custom portals) from interfering with the widget.
       </p>
 
-      <h3 style="font-size: 14px; color: #3E95FF; margin-top: 20px;">Method 1: Custom Web Component (Recommended)</h3>
-      <p style="font-size: 13px; color: #9BB0C8;">
-        Include the script from your hosted repository or CDN and drop the custom tag wherever you want the widget to appear:
+      <h3>Method 1: Custom Web Component (Recommended)</h3>
+      <p>
+        Include the script from your public GitHub Pages URL and place the custom tag <code>&lt;ayc-tide-clock&gt;</code> anywhere inside your webpage:
       </p>
-      <div class="code-block">&lt;!-- 1. Include the AYC Tide Clock Script --&gt;
-&lt;script src="https://&lt;your-github-username&gt;.github.io/&lt;repo-name&gt;/web/ayc-tide-clock.js" defer&gt;&lt;/script&gt;
+      <div class="code-block">&lt;!-- 1. Load the Atlantis Yacht Club Tide Clock Component --&gt;
+&lt;script src="https://mlangdon.github.io/ayc-tide-clock/web/ayc-tide-clock.js" defer&gt;&lt;/script&gt;
 
-&lt;!-- 2. Insert the widget tag anywhere on your webpage --&gt;
+&lt;!-- 2. Insert the widget tag wherever you want it to appear --&gt;
 &lt;ayc-tide-clock&gt;&lt;/ayc-tide-clock&gt;</div>
 
-      <h3 style="font-size: 14px; color: #3E95FF; margin-top: 20px;">Method 2: Standard Iframe Embedding</h3>
-      <p style="font-size: 13px; color: #9BB0C8;">
-        If your CMS or website host restricts external custom scripts, you can embed the widget inside an iframe:
+      <h3>Method 2: Responsive Iframe Embed</h3>
+      <p>
+        If your website management system or club portal restricts third-party custom JavaScript, you can embed the entire live app seamlessly inside an iframe:
       </p>
       <div class="code-block">&lt;iframe
-  src="https://&lt;your-github-username&gt;.github.io/&lt;repo-name&gt;/web/index.html"
+  src="https://mlangdon.github.io/ayc-tide-clock/web/index.html"
   width="100%"
-  height="720"
+  height="780"
   frameborder="0"
   style="border: none; border-radius: 8px; max-width: 980px; display: block; margin: 0 auto;"
   scrolling="no"&gt;
 &lt;/iframe&gt;</div>
 
-      <h3 style="font-size: 14px; color: #3E95FF; margin-top: 20px;">Hosting on a Private GitHub Repository</h3>
-      <ol style="font-size: 13px; line-height: 1.8; color: #CCD6E0; padding-left: 20px;">
-        <li>Push the <code style="color:#E6A13B;">web/</code> directory (<code style="color:#E6A13B;">ayc-tide-clock.js</code> and <code style="color:#E6A13B;">index.html</code>) to your GitHub repository.</li>
-        <li>Enable <strong>GitHub Pages</strong> in your repository settings (Settings &gt; Pages &gt; Build and deployment: Deploy from a branch, select <code>main</code> or <code>gh-pages</code>). Note: GitHub Pages can serve public assets even from private repos on GitHub Enterprise/Pro or public repos. Alternatively, host the single standalone <code style="color:#E6A13B;">ayc-tide-clock.js</code> file on any web host, AWS S3/CloudFront bucket, or Cloudflare Pages.</li>
-        <li>The client browser will fetch live NOAA tide data and Tempestwx station #141221 observations directly without requiring any server backend.</li>
+      <h3>Method 3: Dynamic JavaScript Initialization</h3>
+      <p>
+        For single-page applications (React, Vue, Angular, or standard script containers):
+      </p>
+      <div class="code-block">&lt;div id="my-tide-container"&gt;&lt;/div&gt;
+
+&lt;script src="https://mlangdon.github.io/ayc-tide-clock/web/ayc-tide-clock.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  window.addEventListener('DOMContentLoaded', () => {
+    window.AYCTideClock.init('#my-tide-container');
+  });
+&lt;/script&gt;</div>
+
+      <h3>Current Application Features</h3>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <strong>🎨 AYC Official Color Palette</strong>
+          <span>Styled using official colors from <a href="https://www.atlantisyachtclub.org" target="_blank" class="site-link">atlantisyachtclub.org</a> (Ocean Blue <code>#457B9D</code>, Deep Navy <code>#1D3557</code>, Honeydew <code>#F1FAEE</code>, Regatta Red <code>#E63946</code>).</span>
+        </div>
+        <div class="feature-item">
+          <strong>⏱ Marine Tide Chronometer Dial</strong>
+          <span>High-resolution anti-aliased canvas dial with live hour markers, flood/ebb sector arcs, blued-steel hand, and AYC burgee insignia.</span>
+        </div>
+        <div class="feature-item">
+          <strong>🌤 Current Weather & 3-Day Forecast</strong>
+          <span>Real-time station observations and 3-day daily forecast with direct button link to <a href="https://tempestwx.com/station/141221/" target="_blank" class="site-link">Tempestwx Station #141221</a>.</span>
+        </div>
+        <div class="feature-item">
+          <strong>🌕 Moon Phase & Tidal Range Indicator</strong>
+          <span>Real-time astronomical lunar age, illumination percentage, and Spring/Neap tide current/range prediction.</span>
+        </div>
+        <div class="feature-item">
+          <strong>📐 Bridge Clearances & Headroom Carets</strong>
+          <span>Live overhead clearance under Sea Bright (Draw 15.0' MHW) and Highlands (Fixed 65.0' MHW) bridges with directional headroom carets (▲/▼).</span>
+        </div>
+        <div class="feature-item">
+          <strong>🌊 Sea Bright Current Speed</strong>
+          <span>Live channel current velocity (knots), direction, and acceleration carets with toggle between NOAA harmonic API and Hydraulic math model.</span>
+        </div>
+        <div class="feature-item">
+          <strong>📅 8-Event Tidal Schedule Table</strong>
+          <span>Upcoming 8 consecutive high and low tide predictions synchronized with NOAA Station 8531680 (Sandy Hook / AYC slips).</span>
+        </div>
+        <div class="feature-item">
+          <strong>⚖ Navigational Safety Disclaimer</strong>
+          <span>Integrated formal navigational notice reminding mariners to rely on official NOAA charts and Coast Guard aids.</span>
+        </div>
+      </div>
+
+      <h3>GitHub Pages Deployment Setup</h3>
+      <ol style="line-height: 1.8; padding-left: 20px;">
+        <li>In your repository on GitHub: <a href="https://github.com/mlangdon/ayc-tide-clock" target="_blank" class="site-link"><strong>github.com/mlangdon/ayc-tide-clock</strong></a></li>
+        <li>Go to <strong>Settings</strong> &gt; <strong>Pages</strong> (in the left sidebar).</li>
+        <li>Under <strong>Build and deployment</strong>:
+          <ul>
+            <li>Source: <strong>Deploy from a branch</strong></li>
+            <li>Branch: <strong>main</strong> / Folder: <strong>/ (root)</strong></li>
+            <li>Click <strong>Save</strong>.</li>
+          </ul>
+        </li>
+        <li>Once published, your script is globally available over HTTPS with CORS support for any client website.</li>
       </ol>
     </div>
   </div>
 
-  <!-- Include Local Script for Live Demo -->
+  <!-- Include Local Script for Live Demo Rendering -->
   <script src="ayc-tide-clock.js"></script>
 </body>
 </html>
