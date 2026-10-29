@@ -38,28 +38,32 @@ template = """/**
     mean_range: 2.50
   };
 
+  // Color Palette aligned with https://www.atlantisyachtclub.org
+  // Atlantic Ocean Blue (#457B9D / #437B9D), Deep Slate Navy (#1D3557 / #102035),
+  // Crisp Honeydew (#F1FAEE), Regatta Red (#E63946 / #C8102E), Marine Link (#1E7ABE), Yacht Gold (#D4AF37)
   const THEMES = {
     ayc_navy: {
-      name: 'AYC Regatta Navy',
-      window_bg: '#0E1724',
-      card_bg: '#152234',
-      card_border: '#24364E',
-      header_bg: '#1A2A40',
-      text_primary: '#FFFFFF',
-      text_secondary: '#9BB0C8',
-      accent: '#E6A13B',
-      accent_blue: '#3E95FF',
-      dial_bg: '#101B2B',
-      bezel_main: '#C99D46',
-      bezel_light: '#F3DB94',
-      bezel_shadow: '#1A2433',
-      bezel_outer: '#080E17',
-      high_badge_bg: '#7A1C22',
-      high_badge_fg: '#FF858B',
-      low_badge_bg: '#17406B',
-      low_badge_fg: '#76B8FF',
-      rising_color: '#3498DB',
-      falling_color: '#E67E22'
+      name: 'Atlantis Yacht Club Official',
+      window_bg: '#0F1E33',
+      card_bg: '#162840',
+      card_border: '#274266',
+      header_bg: '#1D3557',
+      text_primary: '#F1FAEE',
+      text_secondary: '#A8DADC',
+      accent: '#E6A13B',        // Nautical Gold
+      accent_blue: '#457B9D',   // AYC Ocean Blue
+      link_blue: '#1E7ABE',
+      dial_bg: '#0A1524',
+      bezel_main: '#B38728',
+      bezel_light: '#FDE68A',
+      bezel_shadow: '#101D2E',
+      bezel_outer: '#060D17',
+      high_badge_bg: '#5E1B24',
+      high_badge_fg: '#FF8A9B',
+      low_badge_bg: '#173C66',
+      low_badge_fg: '#A8DADC',
+      rising_color: '#457B9D',  // AYC Ocean Blue
+      falling_color: '#E63946'  // AYC Regatta Red
     }
   };
 
@@ -71,6 +75,7 @@ template = """/**
       this.currentMode = 'math';
       this.currentAngle = 0;
       this.tideStatus = { state: 'CALCULATING', countdown_str: '--', water_level_pct: 50, is_falling: false };
+      this.moonInfo = { phaseName: 'Calculating...', icon: '🌕', illumination: 100, tideType: 'Spring Tide', tideSub: 'Strongest currents' };
       this.tideEvents = [];
       this.weather = {
         temp_f: null, feels_f: null, cond: 'Connecting...', icon: '🌤',
@@ -111,9 +116,69 @@ template = """/**
       const now = new Date();
       this.computeTideStatus(now);
       this.computeBridgeNav(now);
+      this.computeMoonInfo(now);
       this.drawDial();
       this.drawWave();
       this.updateDOMText(now);
+    }
+
+    computeMoonInfo(now) {
+      const NEW_MOON_REF_MS = Date.UTC(2024, 0, 11, 11, 57, 0);
+      const SYNODIC_MS = 29.530588853 * 86400 * 1000;
+      let diffMs = now.getTime() - NEW_MOON_REF_MS;
+      let ageMs = diffMs % SYNODIC_MS;
+      if (ageMs < 0) ageMs += SYNODIC_MS;
+      const fraction = ageMs / SYNODIC_MS;
+      const illumination = Math.round(50 * (1 - Math.cos(fraction * 2 * Math.PI)));
+
+      let phaseName = 'New Moon';
+      let icon = '🌑';
+      let tideType = 'Spring Tide';
+      let tideSub = 'Strongest currents • Max range';
+
+      if (fraction < 0.03 || fraction >= 0.97) {
+        phaseName = 'New Moon';
+        icon = '🌑';
+        tideType = 'Spring Tide';
+        tideSub = 'Strongest currents • Max range';
+      } else if (fraction < 0.22) {
+        phaseName = 'Waxing Crescent';
+        icon = '🌒';
+        tideType = 'Normal Tide';
+        tideSub = 'Moderate tidal range';
+      } else if (fraction < 0.28) {
+        phaseName = 'First Quarter';
+        icon = '🌓';
+        tideType = 'Neap Tide';
+        tideSub = 'Weakest currents • Min range';
+      } else if (fraction < 0.47) {
+        phaseName = 'Waxing Gibbous';
+        icon = '🌔';
+        tideType = 'Normal Tide';
+        tideSub = 'Moderate tidal range';
+      } else if (fraction < 0.53) {
+        phaseName = 'Full Moon';
+        icon = '🌕';
+        tideType = 'Spring Tide';
+        tideSub = 'Strongest currents • Max range';
+      } else if (fraction < 0.72) {
+        phaseName = 'Waning Gibbous';
+        icon = '🌖';
+        tideType = 'Normal Tide';
+        tideSub = 'Moderate tidal range';
+      } else if (fraction < 0.78) {
+        phaseName = 'Third Quarter';
+        icon = '🌗';
+        tideType = 'Neap Tide';
+        tideSub = 'Weakest currents • Min range';
+      } else {
+        phaseName = 'Waning Crescent';
+        icon = '🌘';
+        tideType = 'Normal Tide';
+        tideSub = 'Moderate tidal range';
+      }
+
+      this.moonInfo = { phaseName, icon, illumination, tideType, tideSub };
     }
 
     computeTideStatus(now) {
@@ -220,23 +285,32 @@ template = """/**
 
     async fetchNOAATides() {
       try {
-        const url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=today&station=8531680&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&interval=hilo&format=json';
+        const now = new Date();
+        const future = new Date(now.getTime() + 4 * 86400000);
+        const yyyymmdd = (d) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}${m}${day}`;
+        };
+        const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=${yyyymmdd(now)}&end_date=${yyyymmdd(future)}&station=8531680&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
         const res = await fetch(url);
         const data = await res.json();
         if (data && data.predictions) {
-          const now = new Date();
           this.tideEvents = data.predictions.map(p => {
             const dt = new Date(p.t.replace(/-/g, '/'));
             const isHigh = (p.type === 'H');
             const offsetMin = isHigh ? AYC_STATION.offset_high_min : AYC_STATION.offset_low_min;
             const aycDt = new Date(dt.getTime() + offsetMin * 60000);
             const ht = (parseFloat(p.v) * AYC_STATION.height_mult).toFixed(1);
+            const dayStr = aycDt.toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' });
+            const timeOnly = aycDt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             return {
               type: isHigh ? 'HIGH TIDE' : 'LOW TIDE',
               is_high: isHigh,
               time: aycDt,
-              time_str: aycDt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              height_str: ht + ' ft'
+              time_str: `${dayStr} ${timeOnly}`,
+              height_str: `${parseFloat(ht) >= 0 ? '+' : ''}${ht} ft`
             };
           }).filter(e => e.time >= new Date(now.getTime() - 3600000));
           this.renderTideTable();
@@ -465,13 +539,13 @@ template = """/**
       const trackInR = innerR * 0.86;
       ctx.beginPath();
       ctx.arc(cx, cy, trackOutR, 0, Math.PI * 2);
-      ctx.strokeStyle = '#4A6572';
+      ctx.strokeStyle = '#3E6188';
       ctx.lineWidth = 0.9;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.arc(cx, cy, trackInR, 0, Math.PI * 2);
-      ctx.strokeStyle = '#4A6572';
+      ctx.strokeStyle = '#3E6188';
       ctx.lineWidth = 0.9;
       ctx.stroke();
 
@@ -482,16 +556,16 @@ template = """/**
 
         let r1 = trackOutR;
         let r2 = trackInR;
-        let strokeCol = '#4A6572';
+        let strokeCol = '#3E6188';
         let lineW = 0.9;
 
         if (isHour) {
           r2 = trackInR - (innerR * 0.02);
-          strokeCol = t.bezel_main;
+          strokeCol = t.bezel_light;
           lineW = 2.0;
         } else if (isHalf) {
           r2 = trackInR + (innerR * 0.015);
-          strokeCol = t.bezel_main;
+          strokeCol = t.bezel_light;
           lineW = 1.2;
         } else {
           r2 = trackOutR - (innerR * 0.035);
@@ -521,125 +595,105 @@ template = """/**
         ctx.fillText(hr.toString(), cx + numR * Math.cos(rad), cy + numR * Math.sin(rad));
       });
 
-      // Cardinals
-      ctx.font = `bold ${Math.max(9, Math.round(innerR * 0.068))}px Georgia, serif`;
-      ctx.fillStyle = '#E74C3C';
-      ctx.fillText('HIGH TIDE', cx, cy - innerR * 0.70);
+      // Cardinal Labels (HIGH TIDE & LOW TIDE)
+      const lblFontSize = Math.max(9, Math.round(innerR * 0.068));
+      ctx.font = `bold ${lblFontSize}px "Segoe UI", sans-serif`;
 
-      ctx.beginPath();
-      ctx.arc(cx, cy - innerR * 0.79, 3, 0, Math.PI * 2);
-      ctx.fillStyle = '#E74C3C';
-      ctx.fill();
-
-      ctx.fillStyle = '#3498DB';
-      ctx.fillText('LOW TIDE', cx, cy + innerR * 0.70);
-
-      ctx.beginPath();
-      ctx.arc(cx, cy + innerR * 0.79, 3, 0, Math.PI * 2);
-      ctx.fillStyle = '#3498DB';
-      ctx.fill();
-
-      ctx.font = `bold ${Math.max(8, Math.round(innerR * 0.062))}px "Segoe UI", sans-serif`;
+      // HIGH TIDE
       ctx.fillStyle = t.falling_color;
-      ctx.fillText('HALF', cx + innerR * 0.54, cy);
+      ctx.fillText('HIGH TIDE', cx, cy - innerR * 0.65);
+      ctx.beginPath();
+      ctx.arc(cx, cy - innerR * 0.74, 3, 0, Math.PI * 2);
+      ctx.fill();
 
+      // LOW TIDE
       ctx.fillStyle = t.rising_color;
-      ctx.fillText('HALF', cx - innerR * 0.54, cy);
+      ctx.fillText('LOW TIDE', cx, cy + innerR * 0.65);
+      ctx.beginPath();
+      ctx.arc(cx, cy + innerR * 0.74, 3, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Insignia
+      // HALF Labels
+      ctx.fillStyle = t.text_secondary;
+      ctx.font = `bold ${Math.max(8, Math.round(innerR * 0.055))}px "Segoe UI", sans-serif`;
+      ctx.fillText('HALF', cx + innerR * 0.65, cy);
+      ctx.fillText('HALF', cx - innerR * 0.65, cy);
+
+      // Central AYC Burgee Emblem
       if (this.burgeeImg.complete && this.burgeeImg.naturalWidth > 0) {
-        const bw = 50;
-        const bh = 35;
-        ctx.drawImage(this.burgeeImg, cx - bw / 2, cy - innerR * 0.49 - bh / 2, bw, bh);
+        const bW = innerR * 0.38;
+        const bH = bW * (this.burgeeImg.naturalHeight / this.burgeeImg.naturalWidth);
+        ctx.drawImage(this.burgeeImg, cx - bW / 2, cy - bH / 2 - 12, bW, bH);
       }
 
-      ctx.font = `bold ${Math.max(9, Math.round(innerR * 0.076))}px Georgia, serif`;
-      ctx.fillStyle = t.text_primary;
-      ctx.fillText('ATLANTIS YACHT CLUB', cx, cy - innerR * 0.25);
-
-      ctx.font = `normal ${Math.max(7, Math.round(innerR * 0.055))}px "Segoe UI", sans-serif`;
+      // Club Inscription
+      ctx.fillStyle = t.accent;
+      ctx.font = `bold ${Math.max(8, Math.round(innerR * 0.058))}px Georgia, serif`;
+      ctx.fillText('ATLANTIS YACHT CLUB', cx, cy + innerR * 0.22);
       ctx.fillStyle = t.text_secondary;
-      ctx.fillText('MONMOUTH BEACH, NJ', cx, cy - innerR * 0.17);
-      ctx.fillText('12h 25m TIDE GAUGE', cx, cy + innerR * 0.28);
+      ctx.font = `${Math.max(7, Math.round(innerR * 0.046))}px "Segoe UI", sans-serif`;
+      ctx.fillText('SHREWSBURY RIVER, NJ', cx, cy + innerR * 0.31);
 
-      // Pointer Hand
-      const handRad = (this.currentAngle - 90) * Math.PI / 180;
-      const handLen = innerR * 0.86;
-      const cosA = Math.cos(handRad);
-      const sinA = Math.sin(handRad);
-      const perpX = -sinA;
-      const perpY = cosA;
+      // Dial Hand (Pointer)
+      const needleAngleRad = (this.currentAngle - 90) * Math.PI / 180;
+      const handLen = innerR * 0.82;
+      const tailLen = innerR * 0.22;
+      const perpAngle = needleAngleRad + Math.PI / 2;
+      const halfW = 4.0;
 
-      const tipX = cx + handLen * cosA;
-      const tipY = cy + handLen * sinA;
+      const tipX = cx + handLen * Math.cos(needleAngleRad);
+      const tipY = cy + handLen * Math.sin(needleAngleRad);
+      const tailX = cx - tailLen * Math.cos(needleAngleRad);
+      const tailY = cy - tailLen * Math.sin(needleAngleRad);
 
-      const flareD = handLen * 0.72;
-      const flareW = Math.max(3.0, handLen * 0.038);
-      const flX = cx + flareD * cosA + flareW * perpX;
-      const flY = cy + flareD * sinA + flareW * perpY;
-      const frX = cx + flareD * cosA - flareW * perpX;
-      const frY = cy + flareD * sinA - flareW * perpY;
+      const p1X = cx + halfW * Math.cos(perpAngle);
+      const p1Y = cy + halfW * Math.sin(perpAngle);
+      const p2X = cx - halfW * Math.cos(perpAngle);
+      const p2Y = cy - halfW * Math.sin(perpAngle);
 
-      const baseW = Math.max(2.0, handLen * 0.024);
-      const blX = cx + baseW * perpX;
-      const blY = cy + baseW * perpY;
-      const brX = cx - baseW * perpX;
-      const brY = cy - baseW * perpY;
-
+      // Needle Shadow
       ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(blX, blY);
-      ctx.lineTo(flX, flY);
-      ctx.lineTo(tipX, tipY);
-      ctx.fillStyle = t.bezel_main;
+      ctx.moveTo(tipX + 2, tipY + 2);
+      ctx.lineTo(p1X + 2, p1Y + 2);
+      ctx.lineTo(tailX + 2, tailY + 2);
+      ctx.lineTo(p2X + 2, p2Y + 2);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
       ctx.fill();
 
+      // Needle Body (Blued steel / Deep marine navy)
       ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(tipX, tipY);
-      ctx.lineTo(frX, frY);
-      ctx.lineTo(brX, brY);
-      ctx.fillStyle = t.bezel_light;
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(p1X, p1Y);
+      ctx.lineTo(tailX, tailY);
+      ctx.lineTo(p2X, p2Y);
+      ctx.closePath();
+      ctx.fillStyle = '#0B2044';
       ctx.fill();
-
-      // Counterweight tail
-      const tailLen = handLen * 0.26;
-      const cwCenterX = cx - (tailLen * 0.65) * cosA;
-      const cwCenterY = cy - (tailLen * 0.65) * sinA;
-      const cwRadius = Math.max(4.0, handLen * 0.055);
-
-      ctx.beginPath();
-      ctx.arc(cwCenterX, cwCenterY, cwRadius, 0, Math.PI * 2);
-      ctx.fillStyle = t.bezel_main;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(cwCenterX, cwCenterY, cwRadius * 0.48, 0, Math.PI * 2);
-      ctx.fillStyle = t.dial_bg;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx - tailLen * cosA, cy - tailLen * sinA);
-      ctx.strokeStyle = t.bezel_main;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = t.bezel_light;
+      ctx.lineWidth = 1.0;
       ctx.stroke();
 
-      // Hub
-      const hubR = Math.max(5.0, handLen * 0.065);
+      // Hand Center Spine (Gold Accent)
       ctx.beginPath();
-      ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
-      ctx.fillStyle = t.bezel_shadow;
-      ctx.fill();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(tipX, tipY);
+      ctx.strokeStyle = t.accent;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
+      // Center Hub Pin
       ctx.beginPath();
-      ctx.arc(cx, cy, hubR * 0.72, 0, Math.PI * 2);
-      ctx.fillStyle = t.bezel_light;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, hubR * 0.32, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 6.5, 0, Math.PI * 2);
       ctx.fillStyle = t.bezel_main;
+      ctx.fill();
+      ctx.strokeStyle = t.bezel_light;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = t.dial_bg;
       ctx.fill();
 
       ctx.restore();
@@ -651,40 +705,35 @@ template = """/**
       const ctx = canvas.getContext('2d');
       const w = canvas.width;
       const h = canvas.height;
-      const t = this.theme;
       ctx.clearRect(0, 0, w, h);
 
+      const t = this.theme;
       const midY = h / 2;
-      const amp = (h - 18) / 2;
+      const amp = (h / 2) - 8;
 
-      ctx.fillStyle = t.card_bg;
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.setLineDash([3, 4]);
-      ctx.strokeStyle = t.card_border;
-      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, midY - amp);
-      ctx.lineTo(w, midY - amp);
-      ctx.moveTo(0, midY + amp);
-      ctx.lineTo(w, midY + amp);
+      ctx.moveTo(0, midY);
+      ctx.lineTo(w, midY);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 1.0;
       ctx.stroke();
-      ctx.setLineDash([]);
 
+      ctx.beginPath();
       const pts = [];
-      const steps = Math.max(60, w);
-      for (let i = 0; i <= steps; i++) {
-        const px = (i / steps) * w;
-        const phase = (i / steps) * 2 * Math.PI;
-        const py = midY - amp * Math.cos(phase);
-        pts.push({ x: px, y: py });
+      for (let x = 0; x <= w; x += 2) {
+        const rad = (x / w) * Math.PI * 2;
+        const y = midY - amp * Math.cos(rad);
+        pts.push({ x, y });
       }
 
-      ctx.beginPath();
       ctx.moveTo(0, h);
       pts.forEach(p => ctx.lineTo(p.x, p.y));
       ctx.lineTo(w, h);
-      ctx.fillStyle = '#152E48';
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(69, 123, 157, 0.45)');
+      grad.addColorStop(1, 'rgba(29, 53, 87, 0.1)');
+      ctx.fillStyle = grad;
       ctx.fill();
 
       ctx.beginPath();
@@ -725,6 +774,20 @@ template = """/**
       const timeEl = sr.getElementById('live-time');
       if (timeEl) timeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+      // Update Moon Phase Info
+      const moonEl = sr.getElementById('moon-phase-text');
+      const moonIcon = sr.getElementById('moon-icon');
+      const moonTide = sr.getElementById('moon-tide-text');
+      if (moonEl && this.moonInfo) {
+        moonEl.textContent = `${this.moonInfo.phaseName} (${this.moonInfo.illumination}%)`;
+      }
+      if (moonIcon && this.moonInfo) {
+        moonIcon.textContent = this.moonInfo.icon;
+      }
+      if (moonTide && this.moonInfo) {
+        moonTide.textContent = `${this.moonInfo.tideType} • ${this.moonInfo.tideSub}`;
+      }
+
       const badge = sr.getElementById('dial-badge');
       if (badge) {
         let badgeTxt = '';
@@ -761,21 +824,16 @@ template = """/**
       const wxHum = sr.getElementById('wx-hum');
       const wxRain = sr.getElementById('wx-rain');
       const wxSolar = sr.getElementById('wx-solar');
-      const wxSource = sr.getElementById('wx-source');
 
       if (wxTemp && w.temp_f !== null) wxTemp.textContent = `${w.icon} ${w.temp_f}°F`;
       if (wxCond && w.feels_f !== null) wxCond.textContent = `Feels ${w.feels_f}° • ${w.cond}`;
       if (wxWind && w.wind_kts !== null) wxWind.textContent = `💨 ${w.wind_kts} kts ${w.wind_card}`;
       if (wxGust && w.wind_gust !== null) wxGust.textContent = `Gusts ${w.wind_gust} kts • ${w.wind_deg}°`;
       if (wxBaro && w.press_inhg !== null) wxBaro.textContent = `🧭 ${w.press_inhg} inHg`;
-      if (wxBaroSub && w.press_mb !== null) wxBaroSub.textContent = `${w.press_mb} mb • Steady`;
+      if (wxBaroSub && w.press_mb !== null) wxBaroSub.textContent = `${w.press_mb} mb • ${w.press_trend}`;
       if (wxHum && w.humidity !== null) wxHum.textContent = `Humidity: ${w.humidity}% • Dew: ${w.dew_f}°F`;
       if (wxRain) wxRain.textContent = `Rain: ${w.rain_rate}\"/hr (${w.rain_today}\" day)`;
       if (wxSolar) wxSolar.textContent = `UV: ${w.uv} • Solar: ${w.solar} W/m²`;
-      if (wxSource) {
-        wxSource.textContent = w.is_live ? '● Tempest #141221 (Live)' : '● Connecting...';
-        wxSource.style.color = w.is_live ? '#2ECC71' : '#E6A13B';
-      }
 
       const sbCl = sr.getElementById('sb-clearance');
       const sbClSub = sr.getElementById('sb-clearance-sub');
@@ -796,13 +854,18 @@ template = """/**
       const tbody = this.shadowRoot.getElementById('tide-tbody');
       if (!tbody) return;
       tbody.innerHTML = '';
-      this.tideEvents.slice(0, 5).forEach((e, i) => {
+      const events = this.tideEvents.slice(0, 8);
+      if (events.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="padding:6px 8px; color:${this.theme.text_secondary};">Loading NOAA predictions...</td></tr>`;
+        return;
+      }
+      events.forEach((e, i) => {
         const tr = document.createElement('tr');
-        tr.style.backgroundColor = (i % 2 === 0) ? this.theme.card_bg : '#121D2C';
+        tr.style.backgroundColor = (i % 2 === 0) ? this.theme.card_bg : 'rgba(255,255,255,0.03)';
         tr.innerHTML = `
-          <td style="padding:4px 8px; font-weight:bold; color:${e.is_high ? this.theme.high_badge_fg : this.theme.low_badge_fg}">${e.type}</td>
-          <td style="padding:4px 8px;">${e.time_str}</td>
-          <td style="padding:4px 8px; font-weight:bold; color:${this.theme.accent}">${e.height_str}</td>
+          <td style="padding:3px 8px; font-weight:bold; color:${e.is_high ? this.theme.high_badge_fg : this.theme.low_badge_fg}">${e.type}</td>
+          <td style="padding:3px 8px; color:${this.theme.text_primary}; font-size:10.5px;">${e.time_str}</td>
+          <td style="padding:3px 8px; font-weight:bold; color:${this.theme.accent}; text-align:right;">${e.height_str}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -913,19 +976,20 @@ template = """/**
             margin-top: 2px;
           }
           .external-link {
-            color: ${t.accent_blue};
+            color: ${t.text_primary};
             text-decoration: none;
-            font-size: 10px;
+            font-size: 10.5px;
             font-weight: bold;
-            padding: 2px 6px;
-            background: rgba(62, 149, 255, 0.12);
-            border-radius: 3px;
-            border: 1px solid rgba(62, 149, 255, 0.25);
+            padding: 3px 8px;
+            background: rgba(69, 123, 157, 0.35);
+            border-radius: 4px;
+            border: 1px solid ${t.accent_blue};
             transition: all 0.2s ease;
           }
           .external-link:hover {
-            background: rgba(62, 149, 255, 0.25);
-            text-decoration: underline;
+            background: rgba(69, 123, 157, 0.6);
+            color: #FFFFFF;
+            text-decoration: none;
           }
           .btn-toggle {
             background: rgba(230, 161, 59, 0.15);
@@ -950,6 +1014,18 @@ template = """/**
             color: ${t.text_secondary};
             font-size: 10px;
           }
+          .disclaimer-box {
+            font-size: 9.5px;
+            line-height: 1.45;
+            color: ${t.text_secondary};
+            opacity: 0.85;
+            padding: 8px 10px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-top: 4px;
+            text-align: justify;
+          }
           @media (max-width: 768px) {
             .app-container { flex-direction: column; }
             .grid-3 { grid-template-columns: 1fr; }
@@ -966,12 +1042,12 @@ template = """/**
 
           <!-- Right Column: Navigation, Harbor Weather & Predictions Dashboard -->
           <div class="dash-column">
-            <!-- Club & Station Info Card -->
+            <!-- Club & Station Info Card with Moon Phase -->
             <div class="card">
               <div class="burgee-header">
                 <img src="${BURGEE_B64}" width="48" height="34" style="border-radius:2px;" alt="AYC Burgee" />
                 <div>
-                  <div style="font-family:Georgia, serif; font-size:15px; font-weight:bold; color:${t.accent};">ATLANTIS YACHT CLUB</div>
+                  <div style="font-family:Georgia, serif; font-size:15px; font-weight:bold; color:${t.accent}; letter-spacing:0.5px;">ATLANTIS YACHT CLUB</div>
                   <div style="font-size:10px; color:${t.text_secondary};">66 River Ave, Monmouth Beach, NJ • Est. 1961</div>
                 </div>
                 <div style="margin-left:auto; text-align:right;">
@@ -979,16 +1055,21 @@ template = """/**
                   <div style="font-size:9px; color:${t.accent};">GPS: 40°20'12.7"N 73°58'42.7"W</div>
                 </div>
               </div>
+              <!-- Moon Phase & Tidal Range Row -->
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:6px; border-top:1px solid ${t.card_border};">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span id="moon-icon" style="font-size:16px;">🌕</span>
+                  <span id="moon-phase-text" style="font-size:11px; font-weight:bold; color:${t.text_primary};">Moon Phase</span>
+                </div>
+                <div id="moon-tide-text" style="font-size:10px; font-weight:600; color:${t.accent};">Spring Tide • Max Range</div>
+              </div>
             </div>
 
-            <!-- Tempest Harbor Weather Card with 3-Day Forecast -->
+            <!-- Current Weather Card with 3-Day Forecast -->
             <div class="card">
               <div class="card-header">
-                <span>TEMPEST HARBOR WEATHER • STN 141221</span>
-                <div>
-                  <span id="wx-source" style="color:#2ECC71; margin-right:8px;">● Tempest #141221</span>
-                  <a href="${TEMPEST_URL}" target="_blank" rel="noopener" class="external-link">🔗 tempestwx.com/station/141221</a>
-                </div>
+                <span>Current Weather</span>
+                <a href="${TEMPEST_URL}" target="_blank" rel="noopener" class="external-link">Weather Station ↗</a>
               </div>
               <div class="grid-3">
                 <div>
@@ -1048,7 +1129,7 @@ template = """/**
               <canvas id="wave-canvas" width="480" height="52" style="width:100%; height:52px; display:block;"></canvas>
             </div>
 
-            <!-- Upcoming Predictions Table -->
+            <!-- Upcoming Predictions Table (Next 8 Events) -->
             <div class="card" style="padding:6px 10px;">
               <div class="card-header" style="margin-bottom:2px;">
                 <span>TIDE TABLE • PREDICTIONS (AYC SLIPS & DOCKS)</span>
@@ -1057,14 +1138,19 @@ template = """/**
                 <thead>
                   <tr>
                     <th>EVENT</th>
-                    <th>TIME</th>
-                    <th>HEIGHT (MLLW)</th>
+                    <th>DATE & TIME</th>
+                    <th style="text-align:right;">HEIGHT (MLLW)</th>
                   </tr>
                 </thead>
                 <tbody id="tide-tbody">
                   <tr><td colspan="3" style="padding:6px 8px; color:${t.text_secondary};">Loading NOAA predictions...</td></tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Legal & Navigational Disclaimer -->
+            <div class="disclaimer-box">
+              ⚖ <strong>Navigational Notice:</strong> This application is provided for informational and recreational convenience only. Data is not intended for passage planning or safe harbor piloting decisions. Always consult official NOAA nautical charts, USCG Local Notices to Mariners, real-time bridge clearance boards, and official navigation aids. Neither Atlantis Yacht Club nor its representatives assume any liability or responsibility for loss, damage, or injury arising from the use of this application.
             </div>
           </div>
         </div>
