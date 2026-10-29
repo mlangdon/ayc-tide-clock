@@ -919,7 +919,7 @@ template = """/**
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             background: ${t.window_bg};
             padding: 8px;
           }
@@ -1023,8 +1023,10 @@ template = """/**
             border-radius: 5px;
             background: rgba(0, 0, 0, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            margin-top: 4px;
+            margin-top: 14px;
             text-align: justify;
+            max-width: 380px;
+            width: 100%;
           }
           @media (max-width: 768px) {
             .app-container { flex-direction: column; }
@@ -1033,11 +1035,15 @@ template = """/**
         </style>
 
         <div class="app-container">
-          <!-- Left Column: Analog Tide Chronometer Dial -->
+          <!-- Left Column: Analog Tide Chronometer Dial with Disclaimer -->
           <div class="dial-column">
             <div style="font-size:11px; font-weight:bold; color:${t.text_secondary}; margin-bottom:4px;">TIDE CHRONOMETER</div>
             <canvas id="dial-canvas" width="380" height="380" style="max-width:100%; height:auto;"></canvas>
             <div id="dial-badge" class="badge">CALCULATING...</div>
+            <!-- Legal & Navigational Disclaimer Under Chronometer -->
+            <div class="disclaimer-box">
+              ⚖ <strong>Navigational Notice:</strong> This application is provided for informational and recreational convenience only. Data is not intended for passage planning or safe harbor piloting decisions. Always consult official NOAA nautical charts, USCG Local Notices to Mariners, real-time bridge clearance boards, and official navigation aids. Neither Atlantis Yacht Club nor its representatives assume any liability or responsibility for loss, damage, or injury arising from the use of this application.
+            </div>
           </div>
 
           <!-- Right Column: Navigation, Harbor Weather & Predictions Dashboard -->
@@ -1146,11 +1152,6 @@ template = """/**
                   <tr><td colspan="3" style="padding:6px 8px; color:${t.text_secondary};">Loading NOAA predictions...</td></tr>
                 </tbody>
               </table>
-            </div>
-
-            <!-- Legal & Navigational Disclaimer -->
-            <div class="disclaimer-box">
-              ⚖ <strong>Navigational Notice:</strong> This application is provided for informational and recreational convenience only. Data is not intended for passage planning or safe harbor piloting decisions. Always consult official NOAA nautical charts, USCG Local Notices to Mariners, real-time bridge clearance boards, and official navigation aids. Neither Atlantis Yacht Club nor its representatives assume any liability or responsibility for loss, damage, or injury arising from the use of this application.
             </div>
           </div>
         </div>
