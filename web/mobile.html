@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AYC Tide Clock • Mobile Dashboard</title>
+  <link rel="icon" type="image/x-icon" href="../ayc_burgee.ico">
+  <style>
+    :root {
+      --ayc-deep-navy: #0F1E33;
+      --ayc-ocean-blue: #457B9D;
+      --ayc-honeydew: #F1FAEE;
+      --ayc-gold: #E6A13B;
+      --ayc-card-bg: #162840;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #070D18;
+      color: var(--ayc-honeydew);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 10px 8px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .header-bar {
+      text-align: center;
+      margin-bottom: 10px;
+      max-width: 440px;
+      width: 100%;
+    }
+    .header-bar h1 {
+      font-family: Georgia, serif;
+      font-size: 16px;
+      color: var(--ayc-gold);
+      letter-spacing: 0.5px;
+    }
+    .header-bar p {
+      font-size: 10px;
+      color: #A8DADC;
+    }
+    .config-controls {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      max-width: 440px;
+      width: 100%;
+    }
+    .btn-pill {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid #274266;
+      color: #A8DADC;
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-pill.active {
+      background: var(--ayc-ocean-blue);
+      color: #ffffff;
+      border-color: var(--ayc-gold);
+    }
+    .app-frame {
+      max-width: 440px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .embed-docs {
+      max-width: 440px;
+      width: 100%;
+      margin-top: 20px;
+      background: var(--ayc-card-bg);
+      border: 1px solid #274266;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 11px;
+    }
+    .embed-docs h2 {
+      font-size: 13px;
+      color: var(--ayc-gold);
+      margin-bottom: 6px;
+    }
+    .code-box {
+      background: #091320;
+      border: 1px solid #1c3350;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 10px;
+      color: #E2E8F0;
+      overflow-x: auto;
+      margin: 6px 0;
+      white-space: pre-wrap;
+    }
+    a.link {
+      color: var(--ayc-ocean-blue);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <h1>ATLANTIS YACHT CLUB</h1>
+    <p>Mobile Tide Chronometer &amp; Shrewsbury River Dashboard</p>
+  </div>
+
+  <!-- Interactive Configuration Switcher -->
+  <div class="config-controls">
+    <button class="btn-pill active" onclick="setConfig('standard')">Standard (Dial + Table)</button>
+    <button class="btn-pill" onclick="setConfig('compact')">Compact (No Dial)</button>
+    <button class="btn-pill" onclick="setConfig('minimal')">Minimal Tides</button>
+  </div>
+
+  <!-- Mobile Custom Web Component Target -->
+  <div class="app-frame" id="app-wrapper">
+    <ayc-tide-mobile id="ayc-mobile-app"></ayc-tide-mobile>
+  </div>
+
+  <!-- Mobile Embed Guide & Quick Config Documentation -->
+  <div class="embed-docs">
+    <h2>📱 Mobile Embed &amp; Config Options</h2>
+    <p>The mobile widget (<code>&lt;ayc-tide-mobile&gt;</code>) is built for phones, sidebars, and narrow portals. It supports easy HTML attributes and JavaScript initialization:</p>
+
+    <div class="code-box">&lt;!-- 1. Include Mobile Component Script --&gt;
+&lt;script src="https://mlangdon.github.io/ayc-tide-clock/web/ayc-tide-mobile.js" defer&gt;&lt;/script&gt;
+
+&lt;!-- 2. Embed with Custom Options --&gt;
+&lt;ayc-tide-mobile
+  show-dial="true"
+  dial-size="250"
+  show-weather="true"
+  show-bridges="true"
+  show-table="true"
+  tide-count="4"&gt;
+&lt;/ayc-tide-mobile&gt;</div>
+
+    <p style="margin-top:6px;"><strong>Configuration Attributes:</strong></p>
+    <ul style="padding-left:16px; margin:4px 0; line-height:1.5;">
+      <li><code>compact="true"</code>: Automatically hides dial &amp; forecast for minimal card view.</li>
+      <li><code>show-dial="false"</code>: Hides analog dial, displays compact status pill.</li>
+      <li><code>dial-size="240"</code>: Custom pixel diameter for dial canvas (default 250).</li>
+      <li><code>tide-count="4"</code>: Number of upcoming high/low predictions (default 4 or 6).</li>
+      <li><code>show-bridges="false"</code>: Hides bridge clearance &amp; current tiles.</li>
+      <li><code>show-weather="false"</code>: Hides Tempest weather station observations.</li>
+    </ul>
+
+    <p style="margin-top:8px; text-align:center;">
+      <a href="index.html" class="link">← Return to Full Desktop / Tablet Dashboard</a>
+    </p>
+  </div>
+
+  <!-- Load Local Mobile Script -->
+  <script src="ayc-tide-mobile.js"></script>
+  <script>
+    function setConfig(mode) {
+      document.querySelectorAll('.btn-pill').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      const widget = document.getElementById('ayc-mobile-app');
+      if (!widget) return;
+
+      if (mode === 'standard') {
+        widget.removeAttribute('compact');
+        widget.setAttribute('show-dial', 'true');
+        widget.setAttribute('show-weather', 'true');
+        widget.setAttribute('show-bridges', 'true');
+        widget.setAttribute('show-table', 'true');
+        widget.setAttribute('tide-count', '4');
+      } else if (mode === 'compact') {
+        widget.setAttribute('compact', 'true');
+        widget.setAttribute('show-dial', 'false');
+        widget.setAttribute('show-weather', 'true');
+        widget.setAttribute('show-bridges', 'true');
+        widget.setAttribute('show-table', 'true');
+        widget.setAttribute('tide-count', '4');
+      } else if (mode === 'minimal') {
+        widget.setAttribute('compact', 'true');
+        widget.setAttribute('show-dial', 'false');
+        widget.setAttribute('show-weather', 'false');
+        widget.setAttribute('show-bridges', 'true');
+        widget.setAttribute('show-table', 'true');
+        widget.setAttribute('tide-count', '3');
+      }
+    }
+  </script>
+</body>
+</html>

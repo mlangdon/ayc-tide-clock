@@ -137,6 +137,9 @@
       <h1>ATLANTIS YACHT CLUB</h1>
       <div class="header-location">Monmouth Beach, NJ • Shrewsbury River</div>
       <div class="header-subtitle">Tide Chronometer &amp; Weather Dashboard</div>
+      <div style="margin-top:10px;">
+        <a href="mobile.html" style="background:rgba(69,123,157,0.3); border:1px solid #457B9D; border-radius:18px; padding:6px 16px; font-size:12px; font-weight:bold; color:#F1FAEE; text-decoration:none; display:inline-block; transition:all 0.2s;">📱 Open Dedicated Mobile App &amp; Configuration Preview (mobile.html) ↗</a>
+      </div>
     </div>
 
     <!-- Live Interactive Component Preview -->
@@ -186,6 +189,44 @@
     window.AYCTideClock.init('#my-tide-container');
   });
 &lt;/script&gt;</div>
+
+      <h3>Method 4: Mobile-Friendly App Component (&lt;ayc-tide-mobile&gt;) &amp; Config Options</h3>
+      <p>
+        For phones, narrow sidebars, or compact mobile views (320px–480px), use the dedicated mobile component:
+      </p>
+      <div class="code-block">&lt;!-- 1. Include the Dedicated Mobile Script --&gt;
+&lt;script src="https://mlangdon.github.io/ayc-tide-clock/web/ayc-tide-mobile.js" defer&gt;&lt;/script&gt;
+
+&lt;!-- 2. Embed with Custom Config Options (All attributes optional) --&gt;
+&lt;ayc-tide-mobile
+  show-dial="true"
+  dial-size="250"
+  show-weather="true"
+  show-forecast="true"
+  show-bridges="true"
+  show-table="true"
+  show-wave="true"
+  tide-count="4"&gt;
+&lt;/ayc-tide-mobile&gt;
+
+&lt;!-- 3. Or Ultra-Compact Card (Hides dial &amp; forecast for minimal vertical height) --&gt;
+&lt;ayc-tide-mobile compact="true" tide-count="3"&gt;&lt;/ayc-tide-mobile&gt;</div>
+
+      <p style="margin-top:6px;"><strong>Mobile Configuration Attributes:</strong></p>
+      <ul style="padding-left:20px; line-height:1.6; font-size:13px; color:#BACBDE;">
+        <li><code>compact="true"</code>: Ultra-compact mobile mode (hides canvas dial and 3-day forecast).</li>
+        <li><code>show-dial="true|false"</code>: Toggle the analog chronometer dial.</li>
+        <li><code>dial-size="250"</code>: Set the canvas dial pixel size (default 250px, scales with Retina dpr).</li>
+        <li><code>tide-count="4"</code>: Configure number of upcoming high/low events shown (e.g. 3, 4, 6, 8).</li>
+        <li><code>show-weather="true|false"</code>: Toggle Tempest weather station observations.</li>
+        <li><code>show-forecast="true|false"</code>: Toggle 3-day harbor weather forecast strip.</li>
+        <li><code>show-bridges="true|false"</code>: Toggle Sea Bright &amp; Highlands bridge clearances.</li>
+        <li><code>show-wave="true|false"</code>: Toggle the water level sine wave visualizer.</li>
+        <li><code>theme="ayc_navy"</code>: Theme selection (official AYC palette).</li>
+      </ul>
+      <p style="margin-top:8px;">
+        👉 <strong><a href="mobile.html" class="site-link">Click here to launch the interactive Mobile App preview (mobile.html)</a></strong> to test various config options in real time.
+      </p>
 
       <h3>Current Application Features</h3>
       <div class="feature-grid">

@@ -1435,3 +1435,12 @@ with open('web/ayc-tide-clock.js', 'w', encoding='utf-8') as f:
     f.write(final_js)
 
 print('Generated web/ayc-tide-clock.js successfully! Length:', len(final_js))
+
+import sys
+web_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else 'web'
+if web_dir not in sys.path:
+    sys.path.append(web_dir)
+try:
+    import build_mobile_js
+except Exception as e:
+    print('Notice importing build_mobile_js:', e)
