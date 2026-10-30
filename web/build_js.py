@@ -72,7 +72,7 @@ template = """/**
       super();
       this.attachShadow({ mode: 'open' });
       this.theme = THEMES.ayc_navy;
-      this.currentMode = 'math';
+      this.currentMode = 'api';
       this.currentAngle = 0;
       this.tideStatus = { state: 'CALCULATING', countdown_str: '--', water_level_pct: 50, is_falling: false };
       this.moonInfo = { phaseName: 'Calculating...', icon: '🌕', illumination: 100, tideType: 'Spring Tide', tideSub: 'Strongest currents' };
@@ -370,7 +370,6 @@ template = """/**
       };
 
       // 3. SEA BRIGHT CURRENT (NOAA ACT3886 or Tide-to-Current Mathematical Model)
-      const angleRad = this.currentAngle * Math.PI / 180;
       let speedAbs = 0;
       let currState = 'SLACK';
       let currDir = 'Slack';
@@ -395,31 +394,37 @@ template = """/**
             currState = 'SLACK';
             currDir = 'Slack';
           } else if (vCurr > 0) {
+            // Positive velocity: Flood current flowing South into Shrewsbury River (185°)
             currState = 'FLOOD';
             currDir = 'South (185°)';
           } else {
+            // Negative velocity: Ebb current flowing North toward Sandy Hook Bay (005°)
             currState = 'EBB';
             currDir = 'North (005°)';
           }
         }
       }
 
-      // Mode 2: Hydrodynamic Tide-to-Current Mathematical Model
-      if (speedAbs === 0 && currState === 'SLACK' && this.currentMode !== 'api') {
-        const vSine = -Math.sin(angleRad);
-        speedAbs = Math.abs(vSine * 1.85);
-        speedTrend = (Math.sin(2 * angleRad) >= 0) ? '▲' : '▼';
+      // Mode 2: Hydrodynamic Tide-to-Current Mathematical Model (Fallback or Manual Toggle)
+      if (currState === 'SLACK' && (this.currentMode !== 'api' || !this.apiCurrentEvents || this.apiCurrentEvents.length === 0)) {
+        const isFalling = this.tideStatus.is_falling;
+        const vMagnitude = Math.sin(this.currentAngle * Math.PI / 180);
+        speedAbs = Math.abs(vMagnitude * 1.85);
 
         if (speedAbs < 0.25) {
           currState = 'SLACK';
           currDir = 'Slack';
-        } else if (vSine < 0) {
-          currState = 'FLOOD';
-          currDir = 'South (185°)';
-        } else {
+        } else if (isFalling) {
+          // Outgoing tide: Water flowing out of estuary -> EBB Northbound (005°)
           currState = 'EBB';
           currDir = 'North (005°)';
+        } else {
+          // Incoming tide: Water flowing into estuary -> FLOOD Southbound (185°)
+          currState = 'FLOOD';
+          currDir = 'South (185°)';
         }
+        speedTrend = (this.currentAngle < 90 || (this.currentAngle >= 180 && this.currentAngle < 270)) ? '▲' : '▼';
+        usedMethod = 'MATH';
       }
 
       this.currents = {
