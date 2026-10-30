@@ -1182,11 +1182,6 @@ template = """/**
             <div class="card">
               <div class="burgee-header">
                 <img src="${BURGEE_B64}" width="48" height="34" style="border-radius:2px;" alt="AYC Burgee" />
-                <div>
-                  <div style="font-family:Georgia, serif; font-size:15px; font-weight:bold; color:${t.accent}; letter-spacing:0.5px;">ATLANTIS YACHT CLUB</div>
-                  <div style="font-size:10px; color:${t.text_secondary};">Monmouth Beach, NJ • Shrewsbury River</div>
-                  <div style="font-size:11px; font-weight:600; color:${t.text_primary}; margin-top:2px;">Tide Chronometer &amp; Weather Dashboard</div>
-                </div>
                 <div style="margin-left:auto; text-align:right;">
                   <div id="live-time" style="font-size:15px; font-weight:bold; font-family:monospace; color:${t.text_primary};">--:--:--</div>
                   <div style="font-size:9px; color:${t.accent};">GPS: 40°20'12.7"N 73°58'42.7"W</div>
