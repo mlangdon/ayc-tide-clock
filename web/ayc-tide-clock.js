@@ -1283,21 +1283,20 @@
           <!-- Right Column: Navigation, Harbor Weather & Predictions Dashboard -->
           <div class="dash-column">
             <!-- Club & Station Info Card with Moon Phase -->
-            <div class="card">
+            <div class="card" style="padding:8px 12px;">
               <div class="burgee-header">
-                <img src="${BURGEE_B64}" width="48" height="34" style="border-radius:2px;" alt="AYC Burgee" />
-                <div style="margin-left:auto; text-align:right;">
+                <img src="${BURGEE_B64}" width="48" height="34" style="border-radius:2px; flex-shrink:0;" alt="AYC Burgee" />
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span id="moon-icon" style="font-size:22px; line-height:1;">🌖</span>
+                  <div>
+                    <div id="moon-phase-text" style="font-size:12px; font-weight:bold; color:${t.text_primary};">Waning Gibbous (78%)</div>
+                    <div id="moon-tide-text" style="font-size:10px; font-weight:600; color:${t.accent}; margin-top:1px;">Normal Tide • Moderate tidal range</div>
+                  </div>
+                </div>
+                <div style="margin-left:auto; text-align:right; flex-shrink:0;">
                   <div id="live-time" style="font-size:15px; font-weight:bold; font-family:monospace; color:${t.text_primary};">--:--:--</div>
                   <div style="font-size:9px; color:${t.accent};">GPS: 40°20'12.7"N 73°58'42.7"W</div>
                 </div>
-              </div>
-              <!-- Moon Phase & Tidal Range Row -->
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:6px; border-top:1px solid ${t.card_border};">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span id="moon-icon" style="font-size:16px;">🌕</span>
-                  <span id="moon-phase-text" style="font-size:11px; font-weight:bold; color:${t.text_primary};">Moon Phase</span>
-                </div>
-                <div id="moon-tide-text" style="font-size:10px; font-weight:600; color:${t.accent};">Spring Tide • Max Range</div>
               </div>
             </div>
 
