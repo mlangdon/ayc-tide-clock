@@ -70,8 +70,10 @@
       this.tideStatus = { state: 'CALCULATING', countdown_str: '--', water_level_pct: 50, is_falling: false };
       this.moonInfo = { phaseName: 'Calculating...', icon: '🌕', illumination: 100, tideType: 'Spring Tide', tideSub: 'Strongest currents' };
       this.allPredictions = [];
-      this.apiCurrentEvents = [];
       this.tideEvents = [];
+      this.sbPredictions = [];
+      this.hlPredictions = [];
+      this.apiCurrentEvents = [];
       this.weather = {
         temp_f: null, feels_f: null, cond: 'Connecting...', icon: '🌤',
         wind_kts: null, wind_gust: null, wind_card: '--', wind_deg: null,
@@ -90,10 +92,12 @@
       this.renderSkeleton();
       this.startClock();
       this.fetchNOAATides();
+      this.fetchNOAABridges();
       this.fetchNOAACurrents();
       this.fetchTempestWeather();
       this.pollInterval = setInterval(() => {
         this.fetchNOAATides();
+        this.fetchNOAABridges();
         this.fetchNOAACurrents();
         this.fetchTempestWeather();
       }, 60000);
@@ -278,32 +282,88 @@
       };
     }
 
+    interpolateWaterLevel(predictions, dt) {
+      if (!predictions || predictions.length < 2) return null;
+      for (let i = 0; i < predictions.length - 1; i++) {
+        const p0 = predictions[i];
+        const p1 = predictions[i + 1];
+        if (p0.time <= dt && dt <= p1.time) {
+          const span = (p1.time - p0.time);
+          if (span <= 0) return p0.height_ft;
+          const ratio = (dt - p0.time) / span;
+          if (p0.type === 'H') {
+            return p1.height_ft + (p0.height_ft - p1.height_ft) * (0.5 * (1 + Math.cos(Math.PI * ratio)));
+          } else {
+            return p0.height_ft + (p1.height_ft - p0.height_ft) * (0.5 * (1 - Math.cos(Math.PI * ratio)));
+          }
+        }
+      }
+      return null;
+    }
+
     computeBridgeNav(now) {
-      const angleRad = this.currentAngle * Math.PI / 180;
-      const sbRange = 3.64 - 0.13;
-      const sbWater = 0.13 + (this.tideStatus.water_level_pct / 100.0) * sbRange;
+      // 1. SEA BRIGHT BRIDGE (Rumson-Sea Bright / CR 520 over Shrewsbury River)
+      // Calculated from closest station: NOAA 8531804 (Sea Bright / Shrewsbury River)
+      // Charted Clearance: 15.0 ft at MHW (Closed bascule span)
+      // NOAA 8531804 Datums: MHW = 3.64 ft MLLW, MLW = 0.13 ft MLLW
+      let sbWater = this.interpolateWaterLevel(this.sbPredictions, now);
+      let sbWaterFuture = this.interpolateWaterLevel(this.sbPredictions, new Date(now.getTime() + 15 * 60000));
+      if (sbWater === null) {
+        const sbRange = 3.64 - 0.13;
+        sbWater = 0.13 + (this.tideStatus.water_level_pct / 100.0) * sbRange;
+        sbWaterFuture = sbWater + (this.tideStatus.is_falling ? -0.05 : 0.05);
+      }
       const sbClearance = SEA_BRIGHT_MHW_CLEARANCE + (SEA_BRIGHT_MHW_DATUM - sbWater);
-
-      const hlRange = 4.41 - 0.18;
-      const hlWater = 0.18 + (this.tideStatus.water_level_pct / 100.0) * hlRange;
-      const hlClearance = HIGHLANDS_MHW_CLEARANCE + (HIGHLANDS_MHW_DATUM - hlWater);
-
-      const isEbb = this.tideStatus.is_falling;
-      const sbCaret = isEbb ? '▲' : '▼';
-      const hlCaret = isEbb ? '▲' : '▼';
+      let sbCaret = '–';
+      let sbTrendDesc = 'Steady';
+      if (sbWaterFuture > sbWater + 0.02) {
+        sbCaret = '▼';
+        sbTrendDesc = 'Decreasing (Flood Tide)';
+      } else if (sbWaterFuture < sbWater - 0.02) {
+        sbCaret = '▲';
+        sbTrendDesc = 'Increasing (Ebb Tide)';
+      }
 
       this.sbClearance = {
         clearance_str: sbClearance.toFixed(1) + ' ft',
         trend_caret: sbCaret,
-        trend_desc: isEbb ? 'Increasing (Ebb Tide)' : 'Decreasing (Flood Tide)'
+        trend_desc: sbTrendDesc,
+        water_level_ft: sbWater.toFixed(2),
+        station_id: '8531804'
       };
+
+      // 2. HIGHLANDS BRIDGE (Route 36 Bridge over Shrewsbury / Sandy Hook Bay)
+      // Calculated from closest station: NOAA 8531712 (Highlands, NJ)
+      // Charted Clearance: 65.0 ft at MHW (Fixed high-level span)
+      // NOAA 8531712 Datums: MHW = 4.41 ft MLLW, MLW = 0.18 ft MLLW
+      let hlWater = this.interpolateWaterLevel(this.hlPredictions, now);
+      let hlWaterFuture = this.interpolateWaterLevel(this.hlPredictions, new Date(now.getTime() + 15 * 60000));
+      if (hlWater === null) {
+        const hlRange = 4.41 - 0.18;
+        hlWater = 0.18 + (this.tideStatus.water_level_pct / 100.0) * hlRange;
+        hlWaterFuture = hlWater + (this.tideStatus.is_falling ? -0.05 : 0.05);
+      }
+      const hlClearance = HIGHLANDS_MHW_CLEARANCE + (HIGHLANDS_MHW_DATUM - hlWater);
+      let hlCaret = '–';
+      let hlTrendDesc = 'Steady';
+      if (hlWaterFuture > hlWater + 0.02) {
+        hlCaret = '▼';
+        hlTrendDesc = 'Decreasing (Flood Tide)';
+      } else if (hlWaterFuture < hlWater - 0.02) {
+        hlCaret = '▲';
+        hlTrendDesc = 'Increasing (Ebb Tide)';
+      }
 
       this.hlClearance = {
         clearance_str: hlClearance.toFixed(1) + ' ft',
         trend_caret: hlCaret,
-        trend_desc: isEbb ? 'Increasing (Ebb Tide)' : 'Decreasing (Flood Tide)'
+        trend_desc: hlTrendDesc,
+        water_level_ft: hlWater.toFixed(2),
+        station_id: '8531712'
       };
 
+      // 3. SEA BRIGHT CURRENT (NOAA ACT3886 or Tide-to-Current Mathematical Model)
+      const angleRad = this.currentAngle * Math.PI / 180;
       let speedAbs = 0;
       let currState = 'SLACK';
       let currDir = 'Slack';
@@ -403,6 +463,51 @@
         }
       } catch (err) {
         console.warn('NOAA tides fetch notice:', err);
+      }
+    }
+
+    async fetchNOAABridges() {
+      try {
+        const now = new Date();
+        const yesterday = new Date(now.getTime() - 86400000);
+        const future = new Date(now.getTime() + 4 * 86400000);
+        const yyyymmdd = (d) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}${m}${day}`;
+        };
+
+        // 1. Closest Station for Sea Bright Bridge: NOAA 8531804 (Sea Bright / Shrewsbury River)
+        const urlSb = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=${yyyymmdd(yesterday)}&end_date=${yyyymmdd(future)}&station=8531804&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+        const resSb = await fetch(urlSb);
+        const dataSb = await resSb.json();
+        if (dataSb && dataSb.predictions) {
+          this.sbPredictions = dataSb.predictions.map(p => ({
+            time: new Date(p.t.replace(/-/g, '/')),
+            height_ft: parseFloat(p.v),
+            type: p.type
+          }));
+          this.sbPredictions.sort((a, b) => a.time - b.time);
+        }
+
+        // 2. Closest Station for Highlands Bridge: NOAA 8531712 (Highlands, NJ)
+        const urlHl = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=${yyyymmdd(yesterday)}&end_date=${yyyymmdd(future)}&station=8531712&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+        const resHl = await fetch(urlHl);
+        const dataHl = await resHl.json();
+        if (dataHl && dataHl.predictions) {
+          this.hlPredictions = dataHl.predictions.map(p => ({
+            time: new Date(p.t.replace(/-/g, '/')),
+            height_ft: parseFloat(p.v),
+            type: p.type
+          }));
+          this.hlPredictions.sort((a, b) => a.time - b.time);
+        }
+
+        this.computeBridgeNav(now);
+        this.updateDOMText(now);
+      } catch (err) {
+        console.warn('NOAA bridge tides fetch notice:', err);
       }
     }
 
@@ -738,11 +843,12 @@
       ctx.fillText('HALF', cx + innerR * 0.65, cy);
       ctx.fillText('HALF', cx - innerR * 0.65, cy);
 
-      // Central AYC Burgee Emblem
+      // Central AYC Burgee Emblem - Positioned halfway between center clock hub and HIGH TIDE text
       if (this.burgeeImg.complete && this.burgeeImg.naturalWidth > 0) {
-        const bW = innerR * 0.38;
+        const bW = innerR * 0.36;
         const bH = bW * (this.burgeeImg.naturalHeight / this.burgeeImg.naturalWidth);
-        ctx.drawImage(this.burgeeImg, cx - bW / 2, cy - bH / 2 - 12, bW, bH);
+        const burgeeCenterY = cy - innerR * 0.325;
+        ctx.drawImage(this.burgeeImg, cx - bW / 2, burgeeCenterY - bH / 2, bW, bH);
       }
 
       // Club Inscription
@@ -877,7 +983,7 @@
       ctx.stroke();
 
       const dirArrow = this.tideStatus.is_falling ? '▼' : '▲';
-      const labelText = `Water Level: ${this.tideStatus.water_level_pct}%  ${dirArrow} ${this.tideStatus.state}`;
+      const labelText = `AYC Docks Water: ${this.tideStatus.water_level_pct}%  ${dirArrow} ${this.tideStatus.state}`;
       ctx.font = 'bold 11px "Segoe UI", sans-serif';
       ctx.fillStyle = t.text_primary;
       ctx.textAlign = 'center';
@@ -1231,17 +1337,17 @@
                 <button id="btn-toggle-curr" class="btn-toggle">🌊 Toggle Model</button>
               </div>
               <div class="grid-3">
-                <div>
+                <div title="Vertical clearance calculated from closest station: NOAA 8531804 (Sea Bright / Shrewsbury River)">
                   <div style="font-size:9px; font-weight:bold; color:${t.text_secondary};">SEA BRIGHT BRIDGE</div>
                   <div id="sb-clearance" class="metric-val">📐 -- ft</div>
                   <div id="sb-clearance-sub" class="metric-sub">Draw • 15.0' MHW</div>
                 </div>
-                <div>
+                <div title="Current speed calculated from NOAA Current Station ACT3886 (Seabright Bridge)">
                   <div style="font-size:9px; font-weight:bold; color:${t.accent_blue};">SEA BRIGHT CURRENT</div>
                   <div id="sb-current" class="metric-val" style="color:${t.accent_blue};">🌊 -- kts</div>
                   <div id="sb-current-sub" class="metric-sub">Slack • 0 kts</div>
                 </div>
-                <div>
+                <div title="Vertical clearance calculated from closest station: NOAA 8531712 (Highlands, NJ)">
                   <div style="font-size:9px; font-weight:bold; color:${t.text_secondary};">HIGHLANDS BRIDGE</div>
                   <div id="hl-clearance" class="metric-val">📐 -- ft</div>
                   <div id="hl-clearance-sub" class="metric-sub">Fixed • 65.0' MHW</div>
