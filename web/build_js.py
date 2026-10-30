@@ -1187,7 +1187,8 @@ template = """/**
             letter-spacing: 0.5px;
           }
           .burgee-header {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
             gap: 10px;
           }
@@ -1289,20 +1290,27 @@ template = """/**
 
           <!-- Right Column: Navigation, Harbor Weather & Predictions Dashboard -->
           <div class="dash-column">
-            <!-- Club & Station Info Card with Moon Phase -->
+            <!-- Club & Station Info Card with Moon Phase & Centered Burgee -->
             <div class="card" style="padding:8px 12px;">
               <div class="burgee-header">
-                <img src="${BURGEE_B64}" width="48" height="34" style="border-radius:2px; flex-shrink:0;" alt="AYC Burgee" />
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span id="moon-icon" style="font-size:22px; line-height:1;">🌖</span>
+                <!-- Left: Moon Phase Info -->
+                <div style="display:flex; align-items:center; gap:8px; justify-content:flex-start;">
+                  <span id="moon-icon" style="font-size:22px; line-height:1; flex-shrink:0;">🌖</span>
                   <div>
-                    <div id="moon-phase-text" style="font-size:12px; font-weight:bold; color:${t.text_primary};">Waning Gibbous (78%)</div>
-                    <div id="moon-tide-text" style="font-size:10px; font-weight:600; color:${t.accent}; margin-top:1px;">Normal Tide • Moderate tidal range</div>
+                    <div id="moon-phase-text" style="font-size:12px; font-weight:bold; color:${t.text_primary}; white-space:nowrap;">Waning Gibbous (78%)</div>
+                    <div id="moon-tide-text" style="font-size:10px; font-weight:600; color:${t.accent}; margin-top:1px; white-space:nowrap;">Normal Tide • Moderate tidal range</div>
                   </div>
                 </div>
-                <div style="margin-left:auto; text-align:right; flex-shrink:0;">
+
+                <!-- Center: AYC Burgee Emblem -->
+                <div style="display:flex; justify-content:center; align-items:center;">
+                  <img src="${BURGEE_B64}" width="48" height="34" style="border-radius:2px; display:block;" alt="AYC Burgee" />
+                </div>
+
+                <!-- Right: Time & GPS Coordinates -->
+                <div style="text-align:right;">
                   <div id="live-time" style="font-size:15px; font-weight:bold; font-family:monospace; color:${t.text_primary};">--:--:--</div>
-                  <div style="font-size:9px; color:${t.accent};">GPS: 40°20'12.7"N 73°58'42.7"W</div>
+                  <div style="font-size:9px; color:${t.accent}; white-space:nowrap;">GPS: 40°20'12.7"N 73°58'42.7"W</div>
                 </div>
               </div>
             </div>
