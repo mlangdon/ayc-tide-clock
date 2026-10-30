@@ -1016,27 +1016,22 @@
         </style>
 
         <div class="mobile-container">
-          <!-- 1. Header Card: Moon Phase (Left), Burgee (Center), Clock & GPS (Right) -->
+          <!-- 1. Header Card: Moon Phase (Left) & Clock / GPS (Right) -->
           <div class="card" style="padding: 6px 10px;">
-            <div class="burgee-header">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
               <!-- Left: Moon Phase -->
-              <div style="display:flex; align-items:center; gap:6px; justify-content:flex-start;">
-                <span id="moon-icon" style="font-size:18px; line-height:1; flex-shrink:0;">🌖</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span id="moon-icon" style="font-size:20px; line-height:1; flex-shrink:0;">🌖</span>
                 <div>
-                  <div id="moon-phase-text" style="font-size:10px; font-weight:bold; color:${t.text_primary}; white-space:nowrap;">Waning Gibbous</div>
-                  <div id="moon-tide-text" style="font-size:8px; font-weight:600; color:${t.accent}; white-space:nowrap;">Normal Tide</div>
+                  <div id="moon-phase-text" style="font-size:11px; font-weight:bold; color:${t.text_primary};">Waning Gibbous</div>
+                  <div id="moon-tide-text" style="font-size:9px; font-weight:600; color:${t.accent}; margin-top:1px;">Normal Tide</div>
                 </div>
               </div>
 
-              <!-- Center: AYC Burgee -->
-              <div style="display:flex; justify-content:center; align-items:center;">
-                <img src="${BURGEE_B64}" width="42" height="30" style="border-radius:2px; display:block;" alt="AYC Burgee" />
-              </div>
-
               <!-- Right: Live Clock & GPS -->
-              <div style="text-align:right;">
-                <div id="live-time" style="font-size:13px; font-weight:bold; font-family:monospace; color:${t.text_primary};">--:--:--</div>
-                <div style="font-size:8px; color:${t.accent}; white-space:nowrap;">40°20'12.7"N 73°58'42.7"W</div>
+              <div style="text-align:right; flex-shrink:0;">
+                <div id="live-time" style="font-size:14px; font-weight:bold; font-family:monospace; color:${t.text_primary};">--:--:--</div>
+                <div style="font-size:9px; color:${t.accent};">40°20'12.7"N 73°58'42.7"W</div>
               </div>
             </div>
           </div>
