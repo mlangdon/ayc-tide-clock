@@ -69,6 +69,8 @@
       this.currentAngle = 0;
       this.tideStatus = { state: 'CALCULATING', countdown_str: '--', water_level_pct: 50, is_falling: false };
       this.moonInfo = { phaseName: 'Calculating...', icon: '🌕', illumination: 100, tideType: 'Spring Tide', tideSub: 'Strongest currents' };
+      this.allPredictions = [];
+      this.apiCurrentEvents = [];
       this.tideEvents = [];
       this.weather = {
         temp_f: null, feels_f: null, cond: 'Connecting...', icon: '🌤',
@@ -88,9 +90,11 @@
       this.renderSkeleton();
       this.startClock();
       this.fetchNOAATides();
+      this.fetchNOAACurrents();
       this.fetchTempestWeather();
       this.pollInterval = setInterval(() => {
         this.fetchNOAATides();
+        this.fetchNOAACurrents();
         this.fetchTempestWeather();
       }, 60000);
     }
@@ -175,8 +179,71 @@
     }
 
     computeTideStatus(now) {
-      const baseEpoch = new Date(2026, 9, 28, 11, 27, 0);
-      const diffMs = now - baseEpoch;
+      // 1. Precise astronomical NOAA bracket calculation for Atlantis Yacht Club
+      if (this.allPredictions && this.allPredictions.length > 0) {
+        const past = this.allPredictions.filter(p => p.time <= now);
+        const future = this.allPredictions.filter(p => p.time > now);
+
+        if (past.length > 0 && future.length > 0) {
+          const prevEv = past[past.length - 1];
+          const nextEv = future[0];
+
+          const spanSec = (nextEv.time - prevEv.time) / 1000;
+          const elapsedSec = (now - prevEv.time) / 1000;
+          const ratio = (spanSec > 0) ? Math.max(0.0, Math.min(1.0, elapsedSec / spanSec)) : 0.5;
+
+          let angleDeg = 0;
+          let isFalling = false;
+          if (prevEv.is_high) {
+            // High to Low -> Falling / Ebb (0° to 180°)
+            angleDeg = ratio * 180.0;
+            isFalling = true;
+          } else {
+            // Low to High -> Rising / Flood (180° to 360°)
+            angleDeg = 180.0 + (ratio * 180.0);
+            isFalling = false;
+          }
+          this.currentAngle = angleDeg;
+
+          const secToNext = (nextEv.time - now) / 1000;
+          const cdHrs = Math.floor(secToNext / 3600);
+          const cdMins = Math.floor((secToNext % 3600) / 60);
+          const countdownStr = cdHrs > 0 ? `${cdHrs}h ${cdMins < 10 ? '0' : ''}${cdMins}m` : `${cdMins}m`;
+
+          let state = isFalling ? 'FALLING' : 'RISING';
+          let stateDesc = isFalling ? 'Falling (Ebb Tide)' : 'Rising (Flood Tide)';
+
+          // Slack water detection: within 12 minutes (720 seconds) of peak
+          if (elapsedSec < 720) {
+            state = prevEv.is_high ? 'HIGH TIDE' : 'LOW TIDE';
+            stateDesc = prevEv.is_high ? 'High Tide Slack Water' : 'Low Tide Slack Water';
+          } else if (secToNext < 720) {
+            state = nextEv.is_high ? 'HIGH TIDE' : 'LOW TIDE';
+            stateDesc = nextEv.is_high ? 'Approaching High Tide Slack' : 'Approaching Low Tide Slack';
+          }
+
+          const cosVal = Math.cos(angleDeg * Math.PI / 180);
+          const waterPct = Math.round(50.0 + 50.0 * cosVal);
+
+          this.tideStatus = {
+            angle_deg: angleDeg,
+            state: state,
+            state_desc: stateDesc,
+            countdown_str: countdownStr,
+            water_level_pct: waterPct,
+            is_falling: isFalling,
+            next_type: nextEv.type,
+            next_time: nextEv.time,
+            next_height_str: nextEv.height_str,
+            sec_to_next: secToNext
+          };
+          return;
+        }
+      }
+
+      // 2. Harmonic fallback if NOAA predictions not yet loaded (calibrated to AYC Channel Slips)
+      const refEpoch = new Date(2026, 9, 30, 13, 20, 0);
+      const diffMs = now - refEpoch;
       const periodMs = TIDE_PERIOD_HOURS * 3600 * 1000;
       let phase = (diffMs % periodMs) / periodMs;
       if (phase < 0) phase += 1.0;
@@ -185,39 +252,26 @@
       this.currentAngle = angleDeg;
 
       const isFalling = (angleDeg >= 0 && angleDeg < 180);
-      let state = 'HIGH TIDE';
-      let stateDesc = 'High Tide Slack';
       let countdownSec = 0;
-
-      if (angleDeg < 10 || angleDeg > 350) {
-        state = 'HIGH TIDE';
-        stateDesc = 'High Tide Slack';
-      } else if (angleDeg > 170 && angleDeg < 190) {
-        state = 'LOW TIDE';
-        stateDesc = 'Low Tide Slack';
-      } else if (isFalling) {
-        state = 'FALLING';
-        stateDesc = 'Falling (Ebb Tide)';
+      if (isFalling) {
         const toLowDeg = 180 - angleDeg;
         countdownSec = (toLowDeg / 360) * (TIDE_PERIOD_HOURS * 3600);
       } else {
-        state = 'RISING';
-        stateDesc = 'Rising (Flood Tide)';
         const toHighDeg = 360 - angleDeg;
         countdownSec = (toHighDeg / 360) * (TIDE_PERIOD_HOURS * 3600);
       }
 
       const cdHrs = Math.floor(countdownSec / 3600);
       const cdMins = Math.floor((countdownSec % 3600) / 60);
-      const countdownStr = cdHrs > 0 ? `${cdHrs}h ${cdMins}m` : `${cdMins}m`;
+      const countdownStr = cdHrs > 0 ? `${cdHrs}h ${cdMins < 10 ? '0' : ''}${cdMins}m` : `${cdMins}m`;
 
       const cosVal = Math.cos(angleDeg * Math.PI / 180);
       const waterPct = Math.round(50.0 + 50.0 * cosVal);
 
       this.tideStatus = {
         angle_deg: angleDeg,
-        state: state,
-        state_desc: stateDesc,
+        state: isFalling ? 'FALLING' : 'RISING',
+        state_desc: isFalling ? 'Falling (Ebb Tide)' : 'Rising (Flood Tide)',
         countdown_str: countdownStr,
         water_level_pct: waterPct,
         is_falling: isFalling
@@ -250,28 +304,62 @@
         trend_desc: isEbb ? 'Increasing (Ebb Tide)' : 'Decreasing (Flood Tide)'
       };
 
-      const vSine = -Math.sin(angleRad);
-      const speedAbs = Math.abs(vSine * 1.85);
-      const speedTrend = (Math.abs(vSine) > 0.7) ? '▼' : '▲';
-
+      let speedAbs = 0;
       let currState = 'SLACK';
       let currDir = 'Slack';
-      if (speedAbs < 0.25) {
-        currState = 'SLACK';
-        currDir = 'Slack';
-      } else if (vSine < 0) {
-        currState = 'FLOOD';
-        currDir = 'South (185°)';
-      } else {
-        currState = 'EBB';
-        currDir = 'North (005°)';
+      let speedTrend = '–';
+      let usedMethod = this.currentMode.toUpperCase();
+
+      // Mode 1: NOAA CO-OPS Station ACT3886 Current Predictions API
+      if (this.currentMode === 'api' && this.apiCurrentEvents && this.apiCurrentEvents.length > 0) {
+        const past = this.apiCurrentEvents.filter(c => c.time <= now);
+        const future = this.apiCurrentEvents.filter(c => c.time > now);
+        if (past.length > 0 && future.length > 0) {
+          const p0 = past[past.length - 1];
+          const p1 = future[0];
+          const span = (p1.time - p0.time) / 1000;
+          const prog = (span > 0) ? Math.max(0, Math.min(1, (now - p0.time) / 1000 / span)) : 0.5;
+          const vCurr = p0.velocity + (p1.velocity - p0.velocity) * (0.5 - 0.5 * Math.cos(prog * Math.PI));
+          const vNext = p0.velocity + (p1.velocity - p0.velocity) * (0.5 - 0.5 * Math.cos(Math.min(1, prog + 0.05) * Math.PI));
+          speedAbs = Math.abs(vCurr);
+          speedTrend = (Math.abs(vNext) >= Math.abs(vCurr)) ? '▲' : '▼';
+
+          if (speedAbs < 0.25) {
+            currState = 'SLACK';
+            currDir = 'Slack';
+          } else if (vCurr > 0) {
+            currState = 'FLOOD';
+            currDir = 'South (185°)';
+          } else {
+            currState = 'EBB';
+            currDir = 'North (005°)';
+          }
+        }
+      }
+
+      // Mode 2: Hydrodynamic Tide-to-Current Mathematical Model
+      if (speedAbs === 0 && currState === 'SLACK' && this.currentMode !== 'api') {
+        const vSine = -Math.sin(angleRad);
+        speedAbs = Math.abs(vSine * 1.85);
+        speedTrend = (Math.sin(2 * angleRad) >= 0) ? '▲' : '▼';
+
+        if (speedAbs < 0.25) {
+          currState = 'SLACK';
+          currDir = 'Slack';
+        } else if (vSine < 0) {
+          currState = 'FLOOD';
+          currDir = 'South (185°)';
+        } else {
+          currState = 'EBB';
+          currDir = 'North (005°)';
+        }
       }
 
       this.currents = {
         speed: speedAbs.toFixed(1),
         state: currState,
         dir: currDir,
-        method: this.currentMode.toUpperCase(),
+        method: usedMethod,
         arrow: speedTrend
       };
     }
@@ -279,6 +367,7 @@
     async fetchNOAATides() {
       try {
         const now = new Date();
+        const yesterday = new Date(now.getTime() - 86400000);
         const future = new Date(now.getTime() + 4 * 86400000);
         const yyyymmdd = (d) => {
           const y = d.getFullYear();
@@ -286,11 +375,11 @@
           const day = String(d.getDate()).padStart(2, '0');
           return `${y}${m}${day}`;
         };
-        const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=${yyyymmdd(now)}&end_date=${yyyymmdd(future)}&station=8531680&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+        const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=${yyyymmdd(yesterday)}&end_date=${yyyymmdd(future)}&station=8531680&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
         const res = await fetch(url);
         const data = await res.json();
         if (data && data.predictions) {
-          this.tideEvents = data.predictions.map(p => {
+          this.allPredictions = data.predictions.map(p => {
             const dt = new Date(p.t.replace(/-/g, '/'));
             const isHigh = (p.type === 'H');
             const offsetMin = isHigh ? AYC_STATION.offset_high_min : AYC_STATION.offset_low_min;
@@ -303,12 +392,49 @@
               is_high: isHigh,
               time: aycDt,
               time_str: `${dayStr} ${timeOnly}`,
-              height_str: `${parseFloat(ht) >= 0 ? '+' : ''}${ht} ft`
+              height_str: `${parseFloat(ht) >= 0 ? '+' : ''}${ht} ft`,
+              height_ft: parseFloat(ht)
             };
-          }).filter(e => e.time >= new Date(now.getTime() - 3600000));
+          });
+          this.allPredictions.sort((a, b) => a.time - b.time);
+          this.tideEvents = this.allPredictions.filter(e => e.time >= new Date(now.getTime() - 15 * 60000));
           this.renderTideTable();
+          this.updateClock();
         }
-      } catch (err) {}
+      } catch (err) {
+        console.warn('NOAA tides fetch notice:', err);
+      }
+    }
+
+    async fetchNOAACurrents() {
+      try {
+        const now = new Date();
+        const yesterday = new Date(now.getTime() - 86400000);
+        const future = new Date(now.getTime() + 2 * 86400000);
+        const yyyymmdd = (d) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}${m}${day}`;
+        };
+        const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date=${yyyymmdd(yesterday)}&end_date=${yyyymmdd(future)}&station=ACT3886&product=currents_predictions&time_zone=lst_ldt&units=english&interval=max_slack&format=json`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.current_predictions && data.current_predictions.cp) {
+          this.apiCurrentEvents = data.current_predictions.cp.map(c => {
+            return {
+              time: new Date(c.Time.replace(/-/g, '/')),
+              velocity: parseFloat(c.Velocity_Major || 0),
+              type: (c.Type || '').toLowerCase()
+            };
+          });
+          this.apiCurrentEvents.sort((a, b) => a.time - b.time);
+          this.computeBridgeNav(now);
+          this.updateDOMText(now);
+        }
+      } catch (err) {
+        console.warn('NOAA currents fetch notice:', err);
+      }
     }
 
     async fetchTempestWeather() {
@@ -841,6 +967,10 @@
       if (hlClSub) hlClSub.textContent = `Fixed • 65.0' MHW • ${this.hlClearance.trend_desc}`;
       if (sbCurr) sbCurr.textContent = `🌊 ${this.currents.speed} kts ${this.currents.arrow}`;
       if (sbCurrSub) sbCurrSub.textContent = `${this.currents.state} (${this.currents.dir}) • [${this.currents.method}]`;
+      const btnToggle = sr.getElementById('btn-toggle-curr');
+      if (btnToggle) {
+        btnToggle.textContent = (this.currentMode === 'api') ? '🌊 Mode: NOAA API' : '🌊 Mode: Math Model';
+      }
     }
 
     renderTideTable() {
