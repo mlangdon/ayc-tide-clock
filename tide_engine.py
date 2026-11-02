@@ -529,53 +529,55 @@ class TideEngine:
         if now is None:
             now_utc = datetime.datetime.now(datetime.timezone.utc)
         elif now.tzinfo is None:
-            now_utc = now.replace(tzinfo=datetime.timezone.utc)
+            now_utc = now.astimezone(datetime.timezone.utc)
         else:
             now_utc = now.astimezone(datetime.timezone.utc)
 
         diff_sec = (now_utc - NEW_MOON_REFERENCE_UTC).total_seconds()
         age_sec = diff_sec % SYNODIC_MONTH_SECONDS
+        if age_sec < 0:
+            age_sec += SYNODIC_MONTH_SECONDS
         fraction = age_sec / SYNODIC_MONTH_SECONDS
         age_days = age_sec / 86400.0
 
         if fraction < 0.03 or fraction >= 0.97:
             phase_name = "New Moon"
-            icon_char = "NEW"
+            icon_char = "🌑"
             tide_type = "Spring Tide"
             tide_sub = "Strongest currents • Max range"
         elif fraction < 0.22:
             phase_name = "Waxing Crescent"
-            icon_char = "CRES"
+            icon_char = "🌒"
             tide_type = "Normal Tide"
             tide_sub = "Moderate tidal range"
         elif fraction < 0.28:
             phase_name = "First Quarter"
-            icon_char = "1ST"
+            icon_char = "🌓"
             tide_type = "Neap Tide"
             tide_sub = "Weakest currents • Min range"
         elif fraction < 0.47:
             phase_name = "Waxing Gibbous"
-            icon_char = "GIBB"
+            icon_char = "🌔"
             tide_type = "Normal Tide"
             tide_sub = "Moderate tidal range"
         elif fraction < 0.53:
             phase_name = "Full Moon"
-            icon_char = "FULL"
+            icon_char = "🌕"
             tide_type = "Spring Tide"
             tide_sub = "Strongest currents • Max range"
         elif fraction < 0.72:
             phase_name = "Waning Gibbous"
-            icon_char = "GIBB"
+            icon_char = "🌖"
             tide_type = "Normal Tide"
             tide_sub = "Moderate tidal range"
         elif fraction < 0.78:
             phase_name = "Third Quarter"
-            icon_char = "3RD"
+            icon_char = "🌗"
             tide_type = "Neap Tide"
             tide_sub = "Weakest currents • Min range"
         else:
             phase_name = "Waning Crescent"
-            icon_char = "CRES"
+            icon_char = "🌘"
             tide_type = "Normal Tide"
             tide_sub = "Moderate tidal range"
 
@@ -586,6 +588,7 @@ class TideEngine:
             "age_days": round(age_days, 1),
             "phase_name": phase_name,
             "icon_char": icon_char,
+            "icon": icon_char,
             "tide_type": tide_type,
             "tide_sub": tide_sub,
             "illumination": illumination

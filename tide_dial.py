@@ -302,21 +302,18 @@ class TideDial(tk.Canvas):
         """Draw understated, prestigious Atlantis Yacht Club branding with official burgee."""
         t = self.theme
 
-        # Move burgee up into the upper quadrant with plenty of clearance above the text
-        burgee_w = 48.0
-        burgee_h = 34.0
-        burgee_y = (cy - inner_r * 0.47) - burgee_h / 2.0
+        # Burgee centered halfway between clock hub (cy) and HIGH TIDE text (cy - inner_r * 0.65)
+        burgee_w = max(36.0, inner_r * 0.36)
+        burgee_h = burgee_w * (34.0 / 48.0)
+        burgee_y = (cy - inner_r * 0.325) - burgee_h / 2.0
         draw_ayc_burgee(self, cx - burgee_w / 2.0, burgee_y, burgee_w, burgee_h, prefer_image=True)
 
-        # Clean tracked club title placed cleanly below the burgee
-        font_ayc = ("Georgia", max(8, int(inner_r * 0.075)), "bold")
-        font_loc = ("Segoe UI", max(6, int(inner_r * 0.055)), "normal")
+        # Club Inscription positioned cleanly in the lower quadrant
+        font_ayc = ("Georgia", max(8, int(inner_r * 0.060)), "bold")
+        font_loc = ("Segoe UI", max(7, int(inner_r * 0.046)), "normal")
 
-        self.create_text(cx, cy - inner_r * 0.25, text="ATLANTIS YACHT CLUB", font=font_ayc, fill=t["dial_text"])
-        self.create_text(cx, cy - inner_r * 0.17, text="MONMOUTH BEACH, NJ", font=font_loc, fill=t["dial_text_dim"])
-
-        # Subtle cycle note in lower quadrant
-        self.create_text(cx, cy + inner_r * 0.28, text="12h 25m TIDE GAUGE", font=font_loc, fill=t["dial_text_dim"])
+        self.create_text(cx, cy + inner_r * 0.22, text="ATLANTIS YACHT CLUB", font=font_ayc, fill=t.get("accent", t["dial_text"]))
+        self.create_text(cx, cy + inner_r * 0.31, text="SHREWSBURY RIVER, NJ", font=font_loc, fill=t["dial_text_dim"])
 
     def _draw_hand(self, cx: float, cy: float, length: float, angle_deg: float):
         """Draw a slender, elegant marine pointer hand with gold center hub."""

@@ -1,6 +1,6 @@
 {
-  "station_name": "Atlantis Yacht Club (Channel Interpolated - 40\u00b020'12.7\"N)",
-  "ref_high_tide": "2026-10-29T12:20:00",
+  "station_name": "Atlantis Yacht Club (Channel Interpolated - 40°20'12.7\"N)",
+  "ref_high_tide": "2026-10-22T07:08:00",
   "theme": "ayc_navy",
   "always_on_top": false,
   "sound_alert": false,
@@ -12,5 +12,5 @@
   "widget_alpha": 0.95,
   "widget_topmost": true,
   "widget_locked": false,
-  "bridge_current_mode": "math"
+  "bridge_current_mode": "api"
 }

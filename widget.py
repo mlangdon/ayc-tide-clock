@@ -475,6 +475,7 @@ class TideClockWidget:
 
         t = self.theme
         tides = self.engine.get_upcoming_tides(count=2, now=now)
+        moon = self.engine.get_moon_info(now)
         if tides:
             next_t = tides[0]
             type_str = "▲ HIGH TIDE" if next_t["is_high"] else "▼ LOW TIDE"
@@ -485,7 +486,7 @@ class TideClockWidget:
                 fg=color
             )
             self.lbl_hud_countdown.config(
-                text=f"Countdown: {next_t['countdown_str']} • {status['state_desc']}"
+                text=f"Countdown: {next_t['countdown_str']} • {moon['icon_char']} {moon['phase_name']} ({moon['illumination']}%)"
             )
 
         # Weather

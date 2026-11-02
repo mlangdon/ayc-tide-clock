@@ -43,26 +43,33 @@ class TideTableView(tk.Frame):
         self.loc_card.config(bg=t["card_bg"], highlightbackground=t["card_border"])
         self.burgee_canvas.config(bg=t["card_bg"])
         self.burgee_canvas.delete("all")
-        draw_ayc_burgee(self.burgee_canvas, 0, 0, 44, 32, prefer_image=True)
+        draw_ayc_burgee(self.burgee_canvas, 0, 0, 48, 34, prefer_image=True)
 
-        self.lbl_club_name.config(bg=t["card_bg"], fg=t["accent"])
-        self.lbl_club_sub.config(bg=t["card_bg"], fg=t["text_primary"])
-        self.lbl_station.config(bg=t["card_bg"], fg=t["text_primary"])
+        for f in getattr(self, "loc_frames", []):
+            f.config(bg=t["card_bg"])
+
+        for attr in ["lbl_club_name", "lbl_club_sub", "lbl_station", "lbl_station_sub", "lbl_website"]:
+            if hasattr(self, attr) and getattr(self, attr) is not None:
+                getattr(self, attr).config(bg=t["card_bg"])
+
         self.lbl_station_coords.config(bg=t["card_bg"], fg=t["accent"])
-        self.lbl_website.config(bg=t["card_bg"], fg=t["text_secondary"])
-        self.lbl_station_sub.config(bg=t["card_bg"], fg=t["text_secondary"])
         self.lbl_noaa_status.config(bg=t["card_bg"])
         self.lbl_datetime.config(bg=t["card_bg"], fg=t["text_primary"])
         self.lbl_moon_icon.config(bg=t["card_bg"], fg=t["accent"])
         self.lbl_moon_desc.config(bg=t["card_bg"], fg=t["text_primary"])
         self.lbl_tide_type.config(bg=t["card_bg"], fg=t["accent"])
 
+        if hasattr(self, "btn_sync") and self.btn_sync:
+            self.btn_sync.config(bg=t["badge_bg"], fg=t["accent_blue"], activebackground=t["accent"])
+        if hasattr(self, "btn_station") and self.btn_station:
+            self.btn_station.config(bg=t["badge_bg"], fg=t["text_primary"], activebackground=t["accent"])
+
         # Weather card theme styling
         self.weather_card.config(bg=t["card_bg"], highlightbackground=t["card_border"])
         self.lbl_wx_title.config(bg=t["card_bg"], fg=t["accent"])
         self.lbl_wx_source.config(bg=t["card_bg"])
-        if hasattr(self, "btn_wx_config") and self.btn_wx_config:
-            self.btn_wx_config.config(bg=t["badge_bg"], fg=t["text_secondary"], activebackground=t["accent"])
+        if hasattr(self, "btn_wx_link") and self.btn_wx_link:
+            self.btn_wx_link.config(bg=t["badge_bg"], fg=t["accent_blue"], activebackground=t["accent"])
         self.lbl_wx_temp.config(bg=t["card_bg"], fg=t["text_primary"])
         self.lbl_wx_cond.config(bg=t["card_bg"], fg=t["text_secondary"])
         self.lbl_wx_wind.config(bg=t["card_bg"], fg=t["accent_blue"])
@@ -74,6 +81,17 @@ class TideTableView(tk.Frame):
         self.lbl_wx_solar.config(bg=t["card_bg"], fg=t["text_secondary"])
         for f in getattr(self, "wx_frames", []):
             f.config(bg=t["card_bg"])
+
+        if hasattr(self, "wx_fc_container"):
+            self.wx_fc_container.config(bg=t["card_bg"])
+            self.lbl_fc_title.config(bg=t["card_bg"], fg=t["accent"])
+            self.wx_forecast_row.config(bg=t["card_bg"])
+            for col in self.fc_cards:
+                col.config(bg=t["table_header_bg"], highlightbackground=t["card_border"])
+            for lbl_date, lbl_temp, lbl_cond in self.fc_widgets:
+                lbl_date.config(bg=t["table_header_bg"], fg=t["text_secondary"])
+                lbl_temp.config(bg=t["table_header_bg"], fg=t["text_primary"])
+                lbl_cond.config(bg=t["table_header_bg"], fg=t["text_secondary"])
 
         # Navigation & Bridges card theme styling
         if hasattr(self, "nav_card"):
@@ -109,92 +127,91 @@ class TideTableView(tk.Frame):
         self.loc_card = tk.Frame(self, bg=t["card_bg"], highlightbackground=t["card_border"], highlightthickness=1, padx=10, pady=8)
         self.loc_card.pack(fill=tk.X, padx=10, pady=(10, 4))
 
-        # AYC Header Row with Club Burgee
-        ayc_header_row = tk.Frame(self.loc_card, bg=t["card_bg"])
-        ayc_header_row.pack(fill=tk.X, pady=(0, 4))
+        # Main 3-column header row
+        header_row = tk.Frame(self.loc_card, bg=t["card_bg"])
+        header_row.pack(fill=tk.X)
 
-        # Canvas for AYC Burgee
-        self.burgee_canvas = tk.Canvas(ayc_header_row, width=48, height=34, bg=t["card_bg"], highlightthickness=0)
-        self.burgee_canvas.pack(side=tk.LEFT, padx=(0, 8))
-        draw_ayc_burgee(self.burgee_canvas, 0, 0, 48, 34, prefer_image=True)
+        # 1. Left Column: Moon Phase Info & Tidal Range
+        moon_box = tk.Frame(header_row, bg=t["card_bg"])
+        moon_box.pack(side=tk.LEFT, fill=tk.Y)
 
-        ayc_title_box = tk.Frame(ayc_header_row, bg=t["card_bg"])
-        ayc_title_box.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-        self.lbl_club_name = tk.Label(ayc_title_box, text="ATLANTIS YACHT CLUB", font=("Georgia", 11, "bold"), bg=t["card_bg"], fg=t["accent"], anchor="w")
-        self.lbl_club_name.pack(fill=tk.X)
-
-        self.lbl_club_sub = tk.Label(ayc_title_box, text="66 River Ave, Monmouth Beach, NJ • Est. 1961", font=("Segoe UI", 8, "bold"), bg=t["card_bg"], fg=t["text_primary"], anchor="w")
-        self.lbl_club_sub.pack(fill=tk.X)
-
-        btn_box_top = tk.Frame(ayc_header_row, bg=t["card_bg"])
-        btn_box_top.pack(side=tk.RIGHT)
-
-        self.btn_sync = tk.Button(
-            btn_box_top, text="Sync NOAA", font=("Segoe UI", 8, "bold"),
-            bg=t["badge_bg"], fg=t["accent_blue"], activebackground=t["accent"],
-            relief=tk.FLAT, bd=0, padx=6, pady=2, cursor="hand2",
-            command=self._sync_noaa
+        self.lbl_moon_icon = tk.Label(
+            moon_box, text="🌖", font=("Segoe UI Emoji", 20),
+            bg=t["card_bg"], fg=t["accent"]
         )
-        self.btn_sync.pack(side=tk.LEFT, padx=(0, 4))
+        self.lbl_moon_icon.pack(side=tk.LEFT, padx=(0, 6))
 
-        btn_station = tk.Button(
-            btn_box_top, text="Ports", font=("Segoe UI", 8, "bold"),
-            bg=t["badge_bg"], fg=t["text_primary"], activebackground=t["accent"],
-            relief=tk.FLAT, bd=0, padx=6, pady=2, cursor="hand2",
-            command=self._open_station_dialog
+        moon_text_box = tk.Frame(moon_box, bg=t["card_bg"])
+        moon_text_box.pack(side=tk.LEFT, fill=tk.Y)
+
+        self.lbl_moon_desc = tk.Label(
+            moon_text_box, text="Moon Phase",
+            font=("Segoe UI", 9, "bold"), bg=t["card_bg"], fg=t["text_primary"], anchor="w"
         )
-        btn_station.pack(side=tk.LEFT)
+        self.lbl_moon_desc.pack(anchor="w")
 
-        # Station Title / Docks
-        self.lbl_station = tk.Label(self.loc_card, text=self.engine.station_name, font=("Segoe UI", 10, "bold"), bg=t["card_bg"], fg=t["text_primary"], anchor="w")
-        self.lbl_station.pack(fill=tk.X, pady=(2, 0))
+        self.lbl_tide_type = tk.Label(
+            moon_text_box, text="Normal Tide • Moderate tidal range",
+            font=("Segoe UI", 7, "bold"), bg=t["card_bg"], fg=t["accent"], anchor="w"
+        )
+        self.lbl_tide_type.pack(anchor="w")
 
-        # GPS Coordinates Badge & Website
-        coords_row = tk.Frame(self.loc_card, bg=t["card_bg"])
-        coords_row.pack(fill=tk.X, pady=(1, 0))
+        # 2. Right Column: Time, GPS Coordinates & Sync Controls
+        right_box = tk.Frame(header_row, bg=t["card_bg"])
+        right_box.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.lbl_datetime = tk.Label(
+            right_box, text="--:--:--",
+            font=("Consolas", 11, "bold"), bg=t["card_bg"], fg=t["text_primary"], anchor="e"
+        )
+        self.lbl_datetime.pack(anchor="e")
 
         coords_str = self.engine.current_station_info.get("coordinates", "40°20'12.7\"N 73°58'42.7\"W")
         self.lbl_station_coords = tk.Label(
-            coords_row, text=f"GPS: {coords_str}",
-            font=("Consolas", 8, "bold"), bg=t["card_bg"], fg=t["accent"], anchor="w"
+            right_box, text=f"GPS: {coords_str}",
+            font=("Consolas", 8, "bold"), bg=t["card_bg"], fg=t["accent"], anchor="e"
         )
-        self.lbl_station_coords.pack(side=tk.LEFT)
+        self.lbl_station_coords.pack(anchor="e", pady=(1, 2))
 
-        self.lbl_website = tk.Label(coords_row, text="atlantisyachtclub.org", font=("Segoe UI", 8, "italic"), bg=t["card_bg"], fg=t["text_secondary"])
-        self.lbl_website.pack(side=tk.RIGHT)
+        right_btn_row = tk.Frame(right_box, bg=t["card_bg"])
+        right_btn_row.pack(anchor="e")
 
-        # Station description and NOAA verified badge
-        status_row = tk.Frame(self.loc_card, bg=t["card_bg"])
-        status_row.pack(fill=tk.X, pady=(1, 4))
+        self.lbl_noaa_status = tk.Label(
+            right_btn_row, text="● NOAA Syncing...",
+            font=("Segoe UI", 7, "bold"), bg=t["card_bg"], fg=t["accent"]
+        )
+        self.lbl_noaa_status.pack(side=tk.LEFT, padx=(0, 6))
 
-        self.lbl_station_sub = tk.Label(status_row, text=self.engine.current_station_info.get("description", "Shrewsbury River"), font=("Segoe UI", 8), bg=t["card_bg"], fg=t["text_secondary"], anchor="w")
-        self.lbl_station_sub.pack(side=tk.LEFT)
+        self.btn_sync = tk.Button(
+            right_btn_row, text="Sync NOAA", font=("Segoe UI", 7, "bold"),
+            bg=t["badge_bg"], fg=t["accent_blue"], activebackground=t["accent"],
+            relief=tk.FLAT, bd=0, padx=5, pady=1, cursor="hand2",
+            command=self._sync_noaa
+        )
+        self.btn_sync.pack(side=tk.LEFT, padx=(0, 3))
 
-        self.lbl_noaa_status = tk.Label(status_row, text="● NOAA Syncing...", font=("Segoe UI", 8, "bold"), bg=t["card_bg"], fg=t["accent"])
-        self.lbl_noaa_status.pack(side=tk.RIGHT)
+        self.btn_station = tk.Button(
+            right_btn_row, text="Ports", font=("Segoe UI", 7, "bold"),
+            bg=t["badge_bg"], fg=t["text_primary"], activebackground=t["accent"],
+            relief=tk.FLAT, bd=0, padx=5, pady=1, cursor="hand2",
+            command=self._open_station_dialog
+        )
+        self.btn_station.pack(side=tk.LEFT)
 
-        # Time and Moon split row
-        info_row = tk.Frame(self.loc_card, bg=t["card_bg"])
-        info_row.pack(fill=tk.X, pady=(2, 0))
+        # 3. Center Column: Centered AYC Burgee Emblem
+        center_box = tk.Frame(header_row, bg=t["card_bg"])
+        center_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        time_col = tk.Frame(info_row, bg=t["card_bg"])
-        time_col.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.lbl_datetime = tk.Label(time_col, text="--:--:--", font=("Segoe UI", 11, "bold"), bg=t["card_bg"], fg=t["text_primary"], anchor="w")
-        self.lbl_datetime.pack(fill=tk.X)
+        self.burgee_canvas = tk.Canvas(center_box, width=48, height=34, bg=t["card_bg"], highlightthickness=0)
+        self.burgee_canvas.pack(anchor="center", pady=2)
+        draw_ayc_burgee(self.burgee_canvas, 0, 0, 48, 34, prefer_image=True)
 
-        moon_col = tk.Frame(info_row, bg=t["card_bg"])
-        moon_col.pack(side=tk.RIGHT)
-        
-        self.lbl_moon_icon = tk.Label(moon_col, text="●", font=("Segoe UI", 12), bg=t["card_bg"], fg=t["accent"])
-        self.lbl_moon_icon.pack(side=tk.LEFT, padx=(0, 4))
-
-        moon_text_frame = tk.Frame(moon_col, bg=t["card_bg"])
-        moon_text_frame.pack(side=tk.LEFT)
-        self.lbl_moon_desc = tk.Label(moon_text_frame, text="Moon Phase", font=("Segoe UI", 8, "bold"), bg=t["card_bg"], fg=t["text_primary"], anchor="e")
-        self.lbl_moon_desc.pack(anchor="e")
-        self.lbl_tide_type = tk.Label(moon_text_frame, text="Tidal Range", font=("Segoe UI", 8), bg=t["card_bg"], fg=t["accent"], anchor="e")
-        self.lbl_tide_type.pack(anchor="e")
+        self.loc_frames = [header_row, moon_box, moon_text_box, right_box, right_btn_row, center_box]
+        self.lbl_club_name = None
+        self.lbl_club_sub = None
+        self.lbl_station = None
+        self.lbl_station_sub = None
+        self.lbl_website = None
 
         # Weather Section: Tempestwx Station 141221 Meteorological Card
         self.weather_card = tk.Frame(self, bg=t["card_bg"], highlightbackground=t["card_border"], highlightthickness=1, padx=8, pady=5)
@@ -205,7 +222,7 @@ class TideTableView(tk.Frame):
         wx_head.pack(fill=tk.X, pady=(0, 2))
 
         self.lbl_wx_title = tk.Label(
-            wx_head, text="TEMPEST HARBOR WEATHER • STN 141221",
+            wx_head, text="Current Weather",
             font=("Segoe UI", 8, "bold"), bg=t["card_bg"], fg=t["accent"], anchor="w"
         )
         self.lbl_wx_title.pack(side=tk.LEFT)
@@ -221,7 +238,7 @@ class TideTableView(tk.Frame):
 
         # Direct link to Tempestwx Station 141221 live web dashboard
         self.btn_wx_link = tk.Button(
-            wx_head_right, text="🔗 tempestwx.com/station/141221", font=("Segoe UI", 7, "bold"),
+            wx_head_right, text="Weather Station ↗", font=("Segoe UI", 7, "bold"),
             bg=t["badge_bg"], fg=t["accent_blue"], activebackground=t["accent"],
             relief=tk.FLAT, bd=0, padx=6, pady=1, cursor="hand2",
             command=self._open_tempest_website
@@ -302,26 +319,40 @@ class TideTableView(tk.Frame):
         )
         self.lbl_wx_solar.pack(side=tk.RIGHT)
 
-        # 3-Day Harbor Forecast Strip
-        self.wx_forecast_frame = tk.Frame(self.weather_card, bg=t["table_header_bg"], padx=6, pady=3)
-        self.wx_forecast_frame.pack(fill=tk.X, pady=(2, 0))
+        # 3-Day Harbor Forecast Section
+        self.wx_fc_container = tk.Frame(self.weather_card, bg=t["card_bg"])
+        self.wx_fc_container.pack(fill=tk.X, pady=(4, 0))
 
         self.lbl_fc_title = tk.Label(
-            self.wx_forecast_frame, text="3-DAY FORECAST:",
-            font=("Segoe UI", 7, "bold"), bg=t["table_header_bg"], fg=t["accent"], anchor="w"
+            self.wx_fc_container, text="3-DAY HARBOR FORECAST:",
+            font=("Segoe UI", 7, "bold"), bg=t["card_bg"], fg=t["accent"], anchor="w"
         )
-        self.lbl_fc_title.pack(side=tk.LEFT, padx=(0, 8))
+        self.lbl_fc_title.pack(fill=tk.X, pady=(0, 3))
 
-        self.fc_day_labels = []
+        # 3 distinct columns side-by-side
+        self.wx_forecast_row = tk.Frame(self.wx_fc_container, bg=t["card_bg"])
+        self.wx_forecast_row.pack(fill=tk.X)
+
+        self.fc_cards = []
+        self.fc_widgets = []
         for d_idx in range(3):
-            lbl_d = tk.Label(
-                self.wx_forecast_frame, text=f"Day {d_idx+1}: --",
-                font=("Segoe UI", 8), bg=t["table_header_bg"], fg=t["text_primary"], anchor="w"
-            )
-            lbl_d.pack(side=tk.LEFT, expand=True, fill=tk.X)
-            self.fc_day_labels.append(lbl_d)
+            # Column box
+            col = tk.Frame(self.wx_forecast_row, bg=t["table_header_bg"], highlightbackground=t["card_border"], highlightthickness=1, padx=6, pady=4)
+            col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0 if d_idx == 0 else 3, 0 if d_idx == 2 else 3))
 
-        self.wx_frames = [wx_head, wx_head_right, wx_main, temp_block, wind_block, baro_block, wx_sub, self.wx_forecast_frame]
+            lbl_date = tk.Label(col, text="-- --", font=("Segoe UI", 8, "bold"), bg=t["table_header_bg"], fg=t["text_secondary"], anchor="w")
+            lbl_date.pack(fill=tk.X)
+
+            lbl_temp = tk.Label(col, text="🌤 --° / --°F", font=("Segoe UI", 9, "bold"), bg=t["table_header_bg"], fg=t["text_primary"], anchor="w")
+            lbl_temp.pack(fill=tk.X, pady=(1, 1))
+
+            lbl_cond = tk.Label(col, text="-- (--% rain)", font=("Segoe UI", 7), bg=t["table_header_bg"], fg=t["text_secondary"], anchor="w")
+            lbl_cond.pack(fill=tk.X)
+
+            self.fc_cards.append(col)
+            self.fc_widgets.append((lbl_date, lbl_temp, lbl_cond))
+
+        self.wx_frames = [wx_head, wx_head_right, wx_main, temp_block, wind_block, baro_block, wx_sub]
 
         # Navigation & Bridges Card: Sea Bright Bridge (Clearance & Current) and Highlands Bridge (Clearance)
         self.nav_card = tk.Frame(self, bg=t["card_bg"], highlightbackground=t["card_border"], highlightthickness=1, padx=8, pady=5)
@@ -535,10 +566,13 @@ class TideTableView(tk.Frame):
         st_info = self.engine.current_station_info
 
         # Station Title and Coordinates
-        self.lbl_station.config(text=self.engine.station_name)
+        if self.lbl_station:
+            self.lbl_station.config(text=self.engine.station_name)
         coords = st_info.get("coordinates", "40°20'12.7\"N 73°58'42.7\"W")
-        self.lbl_station_coords.config(text=f"GPS: {coords}")
-        self.lbl_station_sub.config(text=st_info.get("description", "Shrewsbury River, NJ"))
+        if self.lbl_station_coords:
+            self.lbl_station_coords.config(text=f"GPS: {coords}")
+        if self.lbl_station_sub:
+            self.lbl_station_sub.config(text=st_info.get("description", "Shrewsbury River, NJ"))
 
         # NOAA Live Verification Status
         noaa_id = st_info.get("noaa_id")
@@ -550,12 +584,12 @@ class TideTableView(tk.Frame):
             self.lbl_noaa_status.config(text="● Lunar Harmonic", fg=t["accent_blue"])
 
         # Current Local Time
-        time_formatted = now.strftime("%A, %b %d • %I:%M:%S %p")
+        time_formatted = now.strftime("%I:%M:%S %p")
         self.lbl_datetime.config(text=time_formatted)
 
         # Moon Phase
         moon = self.engine.get_moon_info(now)
-        self.lbl_moon_icon.config(text=moon["icon_char"])
+        self.lbl_moon_icon.config(text=moon.get("icon_char", "●"))
         self.lbl_moon_desc.config(text=f"{moon['phase_name']} ({moon['illumination']}%)")
         self.lbl_tide_type.config(text=f"{moon['tide_type']} • {moon['tide_sub']}")
 
@@ -639,15 +673,18 @@ class TideTableView(tk.Frame):
 
                 # 3-Day Forecast
                 fc_list = getattr(self.weather_service, "forecast_3day", [])
-                for idx, lbl in enumerate(self.fc_day_labels):
+                for idx, (lbl_date, lbl_temp, lbl_cond) in enumerate(self.fc_widgets):
                     if idx < len(fc_list):
                         fd = fc_list[idx]
-                        lbl.config(
-                            text=f"{fd['day_name']} {fd['date_str']}: {fd['icon']} {fd['high_f']}° / {fd['low_f']}°F • {fd['conditions']} ({fd['precip_pct']}% rain)",
-                            fg=t["text_primary"]
-                        )
+                        lbl_date.config(text=f"{fd['day_name']} {fd['date_str']}", fg=t["text_secondary"])
+                        lbl_temp.config(text=f"{fd.get('icon', '🌤')} {fd['high_f']}° / {fd['low_f']}°F", fg=t["text_primary"])
+                        cond_txt = fd.get('conditions', '')
+                        pct = fd.get('precip_pct', 0)
+                        lbl_cond.config(text=f"{cond_txt} ({pct}% rain)", fg=t["text_secondary"])
                     else:
-                        lbl.config(text=f"Day {idx+1}: Forecast Pending...", fg=t["text_secondary"])
+                        lbl_date.config(text=f"Day {idx+1}", fg=t["text_secondary"])
+                        lbl_temp.config(text="--° / --°F", fg=t["text_primary"])
+                        lbl_cond.config(text="Forecast Pending...", fg=t["text_secondary"])
             except Exception:
                 pass
 
