@@ -47,6 +47,8 @@ class TideTableView(tk.Frame):
 
         for f in getattr(self, "loc_frames", []):
             f.config(bg=t["card_bg"])
+        if hasattr(self, "loc_divider") and self.loc_divider:
+            self.loc_divider.config(bg=t["card_border"])
 
         for attr in ["lbl_club_name", "lbl_club_sub", "lbl_station", "lbl_station_sub", "lbl_website"]:
             if hasattr(self, attr) and getattr(self, attr) is not None:
@@ -127,37 +129,17 @@ class TideTableView(tk.Frame):
         self.loc_card = tk.Frame(self, bg=t["card_bg"], highlightbackground=t["card_border"], highlightthickness=1, padx=10, pady=8)
         self.loc_card.pack(fill=tk.X, padx=10, pady=(10, 4))
 
-        # Main 3-column header row
-        header_row = tk.Frame(self.loc_card, bg=t["card_bg"])
-        header_row.pack(fill=tk.X)
+        # Row 1: Time Row with AYC Burgee on Left side, Clock & Coordinates on Right side
+        time_row = tk.Frame(self.loc_card, bg=t["card_bg"])
+        time_row.pack(fill=tk.X)
 
-        # 1. Left Column: Moon Phase Info & Tidal Range
-        moon_box = tk.Frame(header_row, bg=t["card_bg"])
-        moon_box.pack(side=tk.LEFT, fill=tk.Y)
+        # AYC Burgee on the left side of the time row
+        self.burgee_canvas = tk.Canvas(time_row, width=48, height=34, bg=t["card_bg"], highlightthickness=0)
+        self.burgee_canvas.pack(side=tk.LEFT, padx=(2, 8), pady=1)
+        draw_ayc_burgee(self.burgee_canvas, 0, 0, 48, 34, prefer_image=True)
 
-        self.lbl_moon_icon = tk.Label(
-            moon_box, text="🌖", font=("Segoe UI Emoji", 20),
-            bg=t["card_bg"], fg=t["accent"]
-        )
-        self.lbl_moon_icon.pack(side=tk.LEFT, padx=(0, 6))
-
-        moon_text_box = tk.Frame(moon_box, bg=t["card_bg"])
-        moon_text_box.pack(side=tk.LEFT, fill=tk.Y)
-
-        self.lbl_moon_desc = tk.Label(
-            moon_text_box, text="Moon Phase",
-            font=("Segoe UI", 9, "bold"), bg=t["card_bg"], fg=t["text_primary"], anchor="w"
-        )
-        self.lbl_moon_desc.pack(anchor="w")
-
-        self.lbl_tide_type = tk.Label(
-            moon_text_box, text="Normal Tide • Moderate tidal range",
-            font=("Segoe UI", 7, "bold"), bg=t["card_bg"], fg=t["accent"], anchor="w"
-        )
-        self.lbl_tide_type.pack(anchor="w")
-
-        # 2. Right Column: Time, GPS Coordinates & Sync Controls
-        right_box = tk.Frame(header_row, bg=t["card_bg"])
+        # Right side of Time Row: Time, GPS Coordinates & Sync Controls
+        right_box = tk.Frame(time_row, bg=t["card_bg"])
         right_box.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.lbl_datetime = tk.Label(
@@ -198,15 +180,39 @@ class TideTableView(tk.Frame):
         )
         self.btn_station.pack(side=tk.LEFT)
 
-        # 3. Center Column: Centered AYC Burgee Emblem
-        center_box = tk.Frame(header_row, bg=t["card_bg"])
-        center_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Subtle divider between Time Row and Moon Information Row
+        self.loc_divider = tk.Frame(self.loc_card, bg=t["card_border"], height=1)
+        self.loc_divider.pack(fill=tk.X, pady=(6, 5))
 
-        self.burgee_canvas = tk.Canvas(center_box, width=48, height=34, bg=t["card_bg"], highlightthickness=0)
-        self.burgee_canvas.pack(anchor="center", pady=2)
-        draw_ayc_burgee(self.burgee_canvas, 0, 0, 48, 34, prefer_image=True)
+        # Row 2: Moon Information Row (vertically in between Time Row and Current Weather)
+        moon_row = tk.Frame(self.loc_card, bg=t["card_bg"])
+        moon_row.pack(fill=tk.X)
 
-        self.loc_frames = [header_row, moon_box, moon_text_box, right_box, right_btn_row, center_box]
+        moon_inner = tk.Frame(moon_row, bg=t["card_bg"])
+        moon_inner.pack(side=tk.LEFT, fill=tk.X)
+
+        self.lbl_moon_icon = tk.Label(
+            moon_inner, text="🌖", font=("Segoe UI Emoji", 16),
+            bg=t["card_bg"], fg=t["accent"]
+        )
+        self.lbl_moon_icon.pack(side=tk.LEFT, padx=(2, 8))
+
+        moon_text_box = tk.Frame(moon_inner, bg=t["card_bg"])
+        moon_text_box.pack(side=tk.LEFT)
+
+        self.lbl_moon_desc = tk.Label(
+            moon_text_box, text="Moon Phase",
+            font=("Segoe UI", 9, "bold"), bg=t["card_bg"], fg=t["text_primary"], anchor="w"
+        )
+        self.lbl_moon_desc.pack(anchor="w")
+
+        self.lbl_tide_type = tk.Label(
+            moon_text_box, text="Normal Tide • Moderate tidal range",
+            font=("Segoe UI", 8), bg=t["card_bg"], fg=t["accent"], anchor="w"
+        )
+        self.lbl_tide_type.pack(anchor="w")
+
+        self.loc_frames = [time_row, right_box, right_btn_row, moon_row, moon_inner, moon_text_box]
         self.lbl_club_name = None
         self.lbl_club_sub = None
         self.lbl_station = None
