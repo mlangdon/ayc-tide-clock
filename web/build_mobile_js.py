@@ -558,10 +558,17 @@ template = """/**
           this.weather.is_live = true;
         }
 
-        const urlFc = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${TEMPEST_STATION_ID}&token=${TEMPEST_TOKEN}`;
+        const urlFc = `https://swd.weatherflow.com/swd/rest/better_forecast?station_id=${TEMPEST_STATION_ID}&token=${TEMPEST_TOKEN}&units_temp=f&units_wind=kts&units_pressure=inhg`;
         const resFc = await fetch(urlFc);
         const dataFc = await resFc.json();
         if (dataFc && dataFc.forecast && dataFc.forecast.daily) {
+          const isFcCelsius = dataFc.units && dataFc.units.units_temp === 'c';
+          const toF = (val) => {
+            if (val === undefined || val === null) return null;
+            const n = Number(val);
+            if (isNaN(n)) return null;
+            return isFcCelsius ? Math.round(n * 9 / 5 + 32) : Math.round(n);
+          };
           this.weather.forecast_3day = dataFc.forecast.daily.slice(0, 3).map(d => {
             const dt = new Date(d.day_start_local * 1000);
             return {
@@ -569,8 +576,8 @@ template = """/**
               date: dt.toLocaleDateString([], { month: 'numeric', day: 'numeric' }),
               icon: this.weatherflowIcon(d.icon),
               cond: d.conditions || 'Fair',
-              high: Math.round(d.air_temp_high),
-              low: Math.round(d.air_temp_low),
+              high: toF(d.air_temp_high),
+              low: toF(d.air_temp_low),
               precip_pct: d.precip_probability || 0
             };
           });
@@ -802,7 +809,7 @@ template = """/**
         item.style.textAlign = 'center';
         item.innerHTML = `
           <div style="font-size:10px; color:${this.theme.text_secondary}; font-weight:bold;">${f.day}</div>
-          <div style="font-size:12px; font-weight:bold; color:${this.theme.text_primary}; margin:1px 0;">${f.icon} ${f.high}°</div>
+          <div style="font-size:12px; font-weight:bold; color:${this.theme.text_primary}; margin:1px 0;">${f.icon} ${f.high}° / ${f.low}°F</div>
           <div style="font-size:9px; color:${this.theme.text_secondary};">${f.precip_pct}% rain</div>
         `;
         fcContainer.appendChild(item);
@@ -878,7 +885,7 @@ template = """/**
       const wxBaroSub = sr.getElementById('wx-baro-sub');
 
       if (wxTemp && w.temp_f !== null) wxTemp.textContent = `${w.icon} ${w.temp_f}°F`;
-      if (wxCond && w.feels_f !== null) wxCond.textContent = `Feels ${w.feels_f}° • ${w.cond}`;
+      if (wxCond && w.feels_f !== null) wxCond.textContent = `Feels ${w.feels_f}°F • ${w.cond}`;
       if (wxWind && w.wind_kts !== null) wxWind.textContent = `💨 ${w.wind_kts} kts ${w.wind_card}`;
       if (wxGust && w.wind_gust !== null) wxGust.textContent = `Gusts ${w.wind_gust} kts`;
       if (wxBaro && w.press_inhg !== null) wxBaro.textContent = `🧭 ${w.press_inhg} inHg`;

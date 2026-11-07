@@ -557,8 +557,18 @@
         const fcData = await fcRes.json();
         if (fcData && fcData.current_conditions) {
           const cc = fcData.current_conditions;
-          this.weather.temp_f = (cc.air_temperature !== undefined && cc.air_temperature !== null) ? Number(cc.air_temperature).toFixed(1) : null;
-          this.weather.feels_f = (cc.feels_like !== undefined && cc.feels_like !== null) ? Number(cc.feels_like).toFixed(1) : this.weather.temp_f;
+          const isCelsius = fcData.units && fcData.units.units_temp === 'c';
+          const toF = (val) => {
+            if (val === undefined || val === null) return null;
+            const n = Number(val);
+            if (isNaN(n)) return null;
+            return isCelsius ? (n * 9 / 5 + 32) : n;
+          };
+
+          const tempVal = toF(cc.air_temperature);
+          this.weather.temp_f = tempVal !== null ? tempVal.toFixed(1) : null;
+          const feelsVal = toF(cc.feels_like !== undefined && cc.feels_like !== null ? cc.feels_like : cc.air_temperature);
+          this.weather.feels_f = feelsVal !== null ? feelsVal.toFixed(1) : this.weather.temp_f;
           this.weather.cond = cc.conditions || 'Clear';
           this.weather.icon = this.getWeatherIcon(cc.icon || cc.conditions);
           this.weather.wind_kts = (cc.wind_avg !== undefined && cc.wind_avg !== null) ? Number(cc.wind_avg).toFixed(1) : '0.0';
@@ -569,7 +579,8 @@
           this.weather.press_mb = this.weather.press_inhg ? Math.round(Number(this.weather.press_inhg) * 33.8639) : 1016;
           this.weather.press_trend = cc.pressure_trend || 'steady';
           this.weather.humidity = cc.relative_humidity;
-          this.weather.dew_f = (cc.dew_point !== undefined && cc.dew_point !== null) ? Number(cc.dew_point).toFixed(1) : '--';
+          const dewVal = toF(cc.dew_point);
+          this.weather.dew_f = dewVal !== null ? dewVal.toFixed(1) : '--';
           this.weather.uv = cc.uv !== undefined ? cc.uv : 0;
           this.weather.solar = cc.solar_radiation !== undefined ? cc.solar_radiation : 0;
           this.weather.is_live = true;
@@ -578,13 +589,22 @@
         }
 
         if (fcData && fcData.forecast && fcData.forecast.daily) {
+          const isCelsius = fcData.units && fcData.units.units_temp === 'c';
+          const toF = (val) => {
+            if (val === undefined || val === null) return null;
+            const n = Number(val);
+            if (isNaN(n)) return null;
+            return isCelsius ? (n * 9 / 5 + 32) : n;
+          };
           this.weather.forecast_3day = fcData.forecast.daily.slice(0, 3).map(d => {
             const dt = new Date(d.day_start_local * 1000);
+            const highF = toF(d.air_temp_high);
+            const lowF = toF(d.air_temp_low);
             return {
               day: dt.toLocaleDateString([], { weekday: 'short' }),
               date: dt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
-              high: Math.round(d.air_temp_high),
-              low: Math.round(d.air_temp_low),
+              high: highF !== null ? Math.round(highF) : '--',
+              low: lowF !== null ? Math.round(lowF) : '--',
               cond: d.conditions,
               icon: this.getWeatherIcon(d.conditions),
               precip_pct: d.precip_probability || 0
